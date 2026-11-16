@@ -591,6 +591,59 @@ export class WahaClient {
   }
 
   /**
+   * Painel de Grupos: os mesmos grupos de `listarGrupos`, com os participantes.
+   * Medido (fixture `grupos-noweb-2026.7.2.json`): `participants` é array de
+   * `{ id, phoneNumber, admin }` na raiz do grupo; `id` costuma ser `@lid`
+   * (privado) e `phoneNumber` traz o número real em `@s.whatsapp.net` — e pode
+   * faltar. Quem não tem número fica só com o `id`, e não cruza com venda.
+   */
+  async listarGruposComMembros(session: string): Promise<
+    Array<{
+      chatId: string;
+      subject: string | null;
+      participantes: Array<{ id: string; telefone: string | null; admin: boolean }>;
+    }>
+  > {
+    const res = await this.fetchComTeto(`${this.baseUrl}/api/${encodeURIComponent(session)}/groups`, {
+      headers: { "X-Api-Key": this.apiKey },
+    });
+    if (!res.ok) throw new Error(`waha_groups_${res.status}`);
+    const bruto = (await res.json().catch(() => null)) as unknown;
+    const lista = Array.isArray(bruto) ? bruto : bruto && typeof bruto === "object" ? Object.values(bruto) : [];
+    const grupos: Array<{
+      chatId: string;
+      subject: string | null;
+      participantes: Array<{ id: string; telefone: string | null; admin: boolean }>;
+    }> = [];
+    const texto = (v: unknown): string | null =>
+      typeof v === "string" ? v
+      : v && typeof v === "object" && typeof (v as Record<string, unknown>)._serialized === "string"
+        ? ((v as Record<string, unknown>)._serialized as string)
+        : null;
+    for (const item of lista) {
+      if (!item || typeof item !== "object") continue;
+      const o = item as Record<string, unknown>;
+      const chatId = texto(o.id) ?? (typeof o.JID === "string" ? (o.JID as string) : null);
+      if (!chatId || !chatId.endsWith("@g.us")) continue;
+      const subject = typeof o.subject === "string" ? o.subject : typeof o.name === "string" ? o.name : null;
+      const brutos = Array.isArray(o.participants) ? o.participants : [];
+      const participantes: Array<{ id: string; telefone: string | null; admin: boolean }> = [];
+      for (const p of brutos) {
+        if (!p || typeof p !== "object") continue;
+        const r = p as Record<string, unknown>;
+        const id = texto(r.id) ?? texto(r.JID);
+        if (!id) continue;
+        const pn = texto(r.phoneNumber) ?? (id.endsWith("@s.whatsapp.net") || id.endsWith("@c.us") ? id : null);
+        const digitos = pn ? (pn.split("@")[0] ?? "").replace(/\D/g, "") : "";
+        const admin = r.admin === "admin" || r.admin === "superadmin" || r.admin === true || r.isAdmin === true || r.isSuperAdmin === true;
+        participantes.push({ id, telefone: digitos.length >= 8 ? digitos : null, admin });
+      }
+      grupos.push({ chatId, subject, participantes });
+    }
+    return grupos;
+  }
+
+  /**
    * Conversas do acervo, paginadas por offset. Medido no WAHA real (2026.7.2,
    * NOWEB): o id vem como `id` (string) OU `id._serialized`, e a lista traz
    * `@s.whatsapp.net`, `@lid`, `@g.us` e `status@broadcast`. Grupo e status

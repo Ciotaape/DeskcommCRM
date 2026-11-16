@@ -29,6 +29,12 @@
  * `tests/unit/audit-lista-do-painel-e-derivada.test.tsx` reprova quem tentar.
  */
 export const AUDIT_ACTIONS = [
+  // Painel de Grupos (vendas externas por grupo do WhatsApp).
+  "grupos_painel.synced",
+  "grupos_painel.updated",
+  "grupos_painel.vendas_importadas",
+  "grupos_painel.kiwify_conectada",
+  "grupos_painel.venda_recebida",
   "cold_call.result",
   "cold_call.script_updated",
   "settings.agenda_presentation_updated",

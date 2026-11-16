@@ -15758,6 +15758,7 @@ export const DICIONARIO: Traducoes = {
   "O catálogo da loja, com o preço que o atendente de IA responde.": { es: "El catálogo de la tienda, con el precio que responde el agente de IA." },
   "O que se pode marcar, quanto dura, onde acontece e quem atende.": { es: "Qué se puede programar, cuánto dura, dónde se realiza y quién atiende." },
   "Quanto custou cada resultado das campanhas que trazem gente para cá.": { es: "Cuánto costó cada resultado de las campañas que traen gente aquí." },
+  "Seus grupos do WhatsApp: membros, quem comprou e a conversão de cada um.": { es: "Tus grupos de WhatsApp: miembros, quién compró y la conversión de cada uno." },
   "Quem esfriou e ainda está aberto — o que corre risco de morrer sem resposta.": { es: "Quiénes se enfriaron y siguen abiertos: lo que corre el riesgo de perderse sin respuesta." },
   "Quem fez o quê, quando — o histórico que não se apaga.": { es: "Quién hizo qué y cuándo: el historial que no se borra." },
   "Relatório do que a equipe e os agentes fizeram no período: quanto, quem e de que tipo.": { es: "Informe de lo que el equipo y los agentes hicieron en el período: cuánto, quién y de qué tipo." },

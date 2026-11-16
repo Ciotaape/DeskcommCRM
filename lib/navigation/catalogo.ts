@@ -180,6 +180,17 @@ export const NAV_CATALOG = [
     contador: "fila",
   },
   {
+    // Painel de Grupos: membros, vendas (Kiwify) e conversão de cada grupo do
+    // WhatsApp que o número administra.
+    href: "/app/grupos",
+    label: "Grupos",
+    description: "Seus grupos do WhatsApp: membros, quem comprou e a conversão de cada um.",
+    icon: "UsersThree",
+    group: "atendimento",
+    sidebar: true,
+    minRole: "manager",
+  },
+  {
     href: "/app/radar",
     label: "Radar",
     description: "Quem esfriou e ainda está aberto — o que corre risco de morrer sem resposta.",
