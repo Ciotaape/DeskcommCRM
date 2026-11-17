@@ -24,7 +24,7 @@ import { PaperPlaneTilt } from "@/lib/ui/icons";
 
 interface Modelo {
   id: string;
-  name: string;
+  title: string;
   body: string;
   midias?: unknown[] | null;
 }
@@ -129,7 +129,7 @@ export function AbordagemDosGrupos() {
             <option value="">{t("Escolha uma resposta rápida")}</option>
             {(modelos.data ?? []).map((m) => (
               <option key={m.id} value={m.id}>
-                {m.name}
+                {m.title}
               </option>
             ))}
           </select>
