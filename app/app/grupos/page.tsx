@@ -8,6 +8,7 @@ import { requireAuth, resolveActiveOrg } from "@/lib/auth/server";
 import { ROLE_RANK } from "@/lib/auth/types";
 import { traduzir } from "@/lib/i18n/dicionario";
 import { cn } from "@/lib/utils";
+import { AbordagemDosGrupos } from "./_components/AbordagemDosGrupos";
 import { ConversasDosGrupos } from "./_components/ConversasDosGrupos";
 import { MensagensProgramadas } from "./_components/MensagensProgramadas";
 import { PainelDeGrupos } from "./_components/PainelDeGrupos";
@@ -15,7 +16,7 @@ import { PainelDeGrupos } from "./_components/PainelDeGrupos";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Grupos" };
 
-const ABAS = ["conversas", "painel", "programadas"] as const;
+const ABAS = ["conversas", "abordagem", "painel", "programadas"] as const;
 type Aba = (typeof ABAS)[number];
 
 /**
@@ -36,17 +37,18 @@ export default async function GruposPage({
   const t = (texto: string) => traduzir(texto, user.idioma);
   const { aba: abaNaUrl, id } = await searchParams;
   const pedida: Aba = (ABAS as readonly string[]).includes(abaNaUrl ?? "") ? (abaNaUrl as Aba) : "conversas";
-  const aba: Aba = gerente ? pedida : "conversas";
+  const aba: Aba = gerente || pedida === "abordagem" ? pedida : "conversas";
 
   const rotulos: Record<Aba, string> = {
     conversas: t("Conversas"),
+    abordagem: t("Abordagem"),
     painel: t("Painel de vendas"),
     programadas: t("Mensagens programadas"),
   };
 
   const abas = (
     <nav className="flex shrink-0 gap-1 border-b border-border px-3 pt-2" aria-label={t("Grupos")}>
-      {ABAS.filter((a) => gerente || a === "conversas").map((a) => (
+      {ABAS.filter((a) => gerente || a === "conversas" || a === "abordagem").map((a) => (
         <Link
           key={a}
           href={`/app/grupos?aba=${a}`}
@@ -83,7 +85,9 @@ export default async function GruposPage({
     <div className="flex h-full min-h-0 flex-col">
       {abas}
       <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto p-4 md:p-6">
-        {aba === "painel" ? (
+        {aba === "abordagem" ? (
+          <AbordagemDosGrupos />
+        ) : aba === "painel" ? (
           <>
             <p className="text-sm text-muted-foreground">
               {t(
