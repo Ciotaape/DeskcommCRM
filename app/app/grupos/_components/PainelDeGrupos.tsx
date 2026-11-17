@@ -202,7 +202,7 @@ export function PainelDeGrupos({ podeConectar }: { podeConectar: boolean }) {
           </p>
           {kiwify.data?.conectada && kiwify.data.url ? (
             <div className="flex flex-wrap items-center gap-2">
-              <code className="break-all rounded bg-muted px-2 py-1 text-xs">{kiwify.data.url}</code>
+              <code className="break-all rounded-sm bg-muted px-2 py-1 text-xs">{kiwify.data.url}</code>
               <Button
                 variant="outline"
                 size="sm"

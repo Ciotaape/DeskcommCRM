@@ -170,6 +170,16 @@ export const NAV_CATALOG = [
   },
   // ---- Atendimento — onde o operador passa o dia ----
   {
+    // Dashboard de abertura: oportunidades, funil, tarefas, atendimento e
+    // vendas num período. Primeiro do grupo porque é a visão do dia.
+    href: "/app/visao-geral",
+    label: "Visão geral",
+    description: "Dashboard: oportunidades, conversão, funil, tarefas, atendimento e vendas do período.",
+    icon: "Gauge",
+    group: "atendimento",
+    sidebar: true,
+  },
+  {
     href: "/app/inbox",
     label: "Inbox",
     description: "As conversas de WhatsApp, com você e a IA atendendo lado a lado.",

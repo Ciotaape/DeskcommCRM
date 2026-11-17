@@ -74,7 +74,7 @@ interface LinhaVenda {
 const PAGINA = 1000;
 
 /** Lê tudo de uma consulta paginada (o PostgREST corta em 1.000 linhas). */
-async function lerTudo<T>(
+export async function lerTudo<T>(
   consulta: (de: number, ate: number) => PromiseLike<{ data: T[] | null; error: unknown }>,
 ): Promise<T[]> {
   const todas: T[] = [];

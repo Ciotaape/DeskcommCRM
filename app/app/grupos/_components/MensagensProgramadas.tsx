@@ -110,7 +110,7 @@ export function MensagensProgramadas() {
         <h2 className="text-base font-semibold">{t("Nova mensagem programada")}</h2>
 
         <div className="space-y-1.5">
-          <label className="text-sm font-medium" htmlFor="msg-programada">
+          <label className="block text-sm font-medium" htmlFor="msg-programada">
             {t("Mensagem")}
           </label>
           <Textarea
@@ -146,7 +146,7 @@ export function MensagensProgramadas() {
           ) : (
             <div className="max-h-56 space-y-1 overflow-y-auto rounded-md border border-border p-2">
               {grupos.map((g) => (
-                <label key={g.conversation_id} className="flex cursor-pointer items-center gap-2 rounded px-1 py-0.5 text-sm hover:bg-muted/60">
+                <label key={g.conversation_id} className="flex cursor-pointer items-center gap-2 rounded-sm px-1 py-0.5 text-sm hover:bg-muted/60">
                   <input
                     type="checkbox"
                     className="accent-primary"
