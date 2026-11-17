@@ -7,7 +7,7 @@
  */
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useTransition, type ReactNode } from "react";
+import { useState, useTransition, type ReactNode } from "react";
 import {
   Area,
   AreaChart,
@@ -107,9 +107,11 @@ export function VisaoGeralClient({ dados, de, ate }: { dados: VisaoGeral; de: st
     iniciar(() => router.push(`${pathname}?${q.toString()}`));
   };
 
-  const hoje = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+  // O "agora" é lido uma vez, ao montar (render puro).
+  const [agora] = useState(() => Date.now());
   const menosDias = (n: number) =>
-    new Date(Date.now() - n * 86_400_000).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+    new Date(agora - n * 86_400_000).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+  const hoje = menosDias(0);
   const atalhos = [
     { rotulo: t("Hoje"), de: hoje, ate: hoje },
     { rotulo: t("7 dias"), de: menosDias(6), ate: hoje },
@@ -318,7 +320,7 @@ export function VisaoGeralClient({ dados, de, ate }: { dados: VisaoGeral; de: st
           ) : (
             <ul className="divide-y divide-border text-sm">
               {dados.tarefas.proximas.map((tf) => {
-                const atrasada = !!tf.prazo && new Date(tf.prazo) < new Date();
+                const atrasada = !!tf.prazo && new Date(tf.prazo).getTime() < agora;
                 return (
                   <li key={tf.id} className="flex items-center gap-2 py-2">
                     <span className="min-w-0 flex-1 truncate">{tf.titulo}</span>
