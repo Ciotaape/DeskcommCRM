@@ -281,6 +281,13 @@ interface InboxLayoutProps {
    * faria a lateral nascer completa e "pular" para a escolhida.
    */
   modulosDaLateral?: ModuloDaLateral[];
+  /**
+   * Qual lado da conversa esta tela mostra. `"privado"` (o Inbox) lista só as
+   * conversas um-a-um; `"grupos"` (a aba Grupos) lista só os grupos do
+   * WhatsApp. Os dois lados nunca se misturam: o filtro vai à rota como
+   * `is_group=false|true` e o Realtime respeita o mesmo filtro.
+   */
+  modo?: "privado" | "grupos";
 }
 
 export function InboxLayout({
@@ -288,6 +295,7 @@ export function InboxLayout({
   rascunho = null,
   painelRecolhidoInicial = false,
   modulosDaLateral,
+  modo = "privado",
 }: InboxLayoutProps = {}) {
   const t = useT();
   const { activeOrg, user } = useAuth();
@@ -482,7 +490,7 @@ export function InboxLayout({
       tag: filterValue.tag,
       tagMode: filterValue.tagMode,
       unread: filterValue.onlyUnread || undefined,
-      is_group: filterValue.onlyGroups || undefined,
+      is_group: modo === "grupos",
     }),
     [
       filterValue.tab,
@@ -494,7 +502,7 @@ export function InboxLayout({
       filterValue.tag,
       filterValue.tagMode,
       filterValue.onlyUnread,
-      filterValue.onlyGroups,
+      modo,
     ],
   );
 
@@ -968,7 +976,7 @@ export function InboxLayout({
       >
         <BotaoIniciarConversa />
         <InboxFilters
-          value={filterValue}
+          value={{ ...filterValue, onlyGroups: modo === "grupos" }}
           onChange={setFilterValue}
           filas={filasDaOrganizacao?.data ?? []}
         />

@@ -184,11 +184,11 @@ export const NAV_CATALOG = [
     // WhatsApp que o número administra.
     href: "/app/grupos",
     label: "Grupos",
-    description: "Seus grupos do WhatsApp: membros, quem comprou e a conversão de cada um.",
+    description: "Conversas dos grupos do WhatsApp, quem comprou e mensagens programadas.",
     icon: "UsersThree",
     group: "atendimento",
     sidebar: true,
-    minRole: "manager",
+    minRole: "agent",
   },
   {
     href: "/app/radar",

@@ -221,7 +221,7 @@ export function ConversationList({
   // mensagens vao aparecer. Este e o unico caso que ainda sai por `return`
   // precoce, porque aqui nao ha pagina seguinte a alcancar.
   const filtrosAtivos = filtrosAuxiliaresAtivos(filters);
-  if (items.length === 0 && filtrosAtivos.length === 0) {
+  if (items.length === 0 && filtrosAtivos.length === 0 && !filters.is_group) {
     return (
       <div className="flex h-full items-center justify-center p-6">
         <EmptyInbox />
@@ -245,7 +245,7 @@ export function ConversationList({
             Sem esta linha o operador só ouve "Nenhuma conversa com esses
             filtros" e acha o botão quebrado (issue #2103). */}
         {items.length === 0 && filters.is_group && (
-          <p className="px-6 pb-6 text-center text-xs text-text-subtle">
+          <p className="px-6 py-6 text-center text-xs text-text-subtle">
             {t("Só entram na inbox os grupos ligados em Conexões › Grupos, e cada um aparece aqui a partir da primeira mensagem recebida depois de ligar (o histórico anterior não entra).")}
           </p>
         )}

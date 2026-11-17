@@ -10,13 +10,14 @@ import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useTagDeIdioma } from "@/hooks/i18n/useLocaleDeData";
 import { useT } from "@/hooks/i18n/useT";
 import { neutralizarFormula } from "@/lib/csv/neutralizar-formula";
 import type { DetalheDoGrupo as Detalhe } from "@/lib/grupos-painel/servico";
 import { ArrowLeft, DownloadSimple } from "@/lib/ui/icons";
 
 const reais = (cents: number) => (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-const data = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("pt-BR") : "—");
+const data = (iso: string | null, tag: string) => (iso ? new Date(iso).toLocaleDateString(tag) : "—");
 const fone = (d: string | null) => (d ? `+${d}` : "número oculto");
 
 function baixarCsv(nome: string, linhas: string[][]) {
@@ -31,7 +32,8 @@ function baixarCsv(nome: string, linhas: string[][]) {
 
 export function DetalheDoGrupo({ id, onVoltar }: { id: string; onVoltar: () => void }) {
   const t = useT();
-  const [filtro, setFiltro] = useState<"todos" | "compraram" | "nao">("todos");
+  const tag = useTagDeIdioma();
+  const [filtro, setFiltro] = useState<"tudo" | "compraram" | "nao">("tudo");
   const q = useQuery({
     queryKey: ["grupos-painel", id],
     queryFn: async () => {
@@ -65,13 +67,13 @@ export function DetalheDoGrupo({ id, onVoltar }: { id: string; onVoltar: () => v
       </div>
       <p className="text-sm text-muted-foreground">
         {d.membros.length} {t("membros")} · {comTelefone} {t("com número visível")} · {compraram} {t("compraram")} ·{" "}
-        {t("atualizado em")} {data(d.grupo.sincronizadoEm)}
+        {t("atualizado em")} {data(d.grupo.sincronizadoEm, tag)}
       </p>
 
       <div className="flex flex-wrap items-center gap-2">
-        {(["todos", "compraram", "nao"] as const).map((f) => (
+        {(["tudo", "compraram", "nao"] as const).map((f) => (
           <Button key={f} size="sm" variant={filtro === f ? "primary" : "outline"} onClick={() => setFiltro(f)}>
-            {f === "todos" ? t("Todos") : f === "compraram" ? t("Compraram") : t("Não compraram")}
+            {f === "tudo" ? t("Todos") : f === "compraram" ? t("Compraram") : t("Não compraram")}
           </Button>
         ))}
         <Button
@@ -113,7 +115,7 @@ export function DetalheDoGrupo({ id, onVoltar }: { id: string; onVoltar: () => v
                 </td>
                 <td className="p-3 text-right tabular-nums">{m.compras || "—"}</td>
                 <td className="p-3 text-right tabular-nums">{m.valorCents ? reais(m.valorCents) : "—"}</td>
-                <td className="p-3">{data(m.ultimaCompraEm)}</td>
+                <td className="p-3">{data(m.ultimaCompraEm, tag)}</td>
               </tr>
             ))}
           </tbody>
@@ -130,7 +132,7 @@ export function DetalheDoGrupo({ id, onVoltar }: { id: string; onVoltar: () => v
               <li key={i} className="flex flex-wrap justify-between gap-2 p-3">
                 <span>{c.nome ?? "—"}</span>
                 <span className="tabular-nums text-muted-foreground">
-                  {fone(c.telefone)} · {data(c.compradoEm)} · {reais(c.valorCents)}
+                  {fone(c.telefone)} · {data(c.compradoEm, tag)} · {reais(c.valorCents)}
                 </span>
               </li>
             ))}

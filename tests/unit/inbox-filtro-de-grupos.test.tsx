@@ -9,7 +9,7 @@
  * #2103: some quando o aviso entrar.
  */
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const ORG = "00000000-0000-4000-8000-0000000000aa";
@@ -50,42 +50,46 @@ vi.mock("@/hooks/inbox/useCloseConversation", () => ({
 
 import { InboxLayout } from "@/components/inbox/InboxLayout";
 
-function montar() {
+function montar(modo?: "privado" | "grupos") {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={qc}>
-      <InboxLayout />
+      <InboxLayout modo={modo} />
     </QueryClientProvider>,
   );
-}
-
-async function clicarEmGrupos() {
-  const botao = await screen.findByRole("button", { name: "Grupos" });
-  fireEvent.click(botao);
 }
 
 function urlsPedidas(): string[] {
   return get.mock.calls.map((c) => String(c[0]));
 }
 
-describe("inbox: o filtro Grupos (#2103)", () => {
+describe("inbox x aba Grupos: cada lado lista só o seu", () => {
   beforeEach(() => {
     get.mockClear();
     window.history.replaceState(null, "", "/app/inbox");
   });
 
-  it("clicar em Grupos manda is_group=true na listagem", async () => {
+  it("o Inbox (padrão) pede só o privado: is_group=false, e não tem botão Grupos", async () => {
     montar();
-    await clicarEmGrupos();
-    await waitFor(() => expect(urlsPedidas().some((u) => u.includes("is_group=true"))).toBe(true));
+    await waitFor(() =>
+      expect(urlsPedidas().some((u) => u.startsWith("/api/v1/conversations?") && u.includes("is_group=false"))).toBe(true),
+    );
+    expect(urlsPedidas().some((u) => u.includes("is_group=true"))).toBe(false);
+    expect(screen.queryByRole("button", { name: "Grupos" })).toBeNull();
   });
 
-  it("lista vazia com o filtro Grupos aponta para Conexões › Grupos", async () => {
-    montar();
-    await clicarEmGrupos();
-    // O vazio tem de EXPLICAR por que não há conversa de grupo nenhuma:
-    // nenhuma existe até o operador ligar um grupo do número em Conexões › Grupos.
-    await screen.findByText(/Nenhuma conversa com esses filtros/);
+  it("a aba Grupos pede só grupos: is_group=true na lista e nos contadores", async () => {
+    montar("grupos");
+    await waitFor(() =>
+      expect(urlsPedidas().some((u) => u.startsWith("/api/v1/conversations?") && u.includes("is_group=true"))).toBe(true),
+    );
+    await waitFor(() =>
+      expect(urlsPedidas().some((u) => u.startsWith("/api/v1/conversations/counts") && u.includes("is_group=true"))).toBe(true),
+    );
+  });
+
+  it("lista de grupos vazia aponta para Conexões › Grupos", async () => {
+    montar("grupos");
     await screen.findByText(/Conexões › Grupos/);
   });
 });

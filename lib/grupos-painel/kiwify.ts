@@ -25,6 +25,8 @@ export interface VendaNormalizada {
   origem_src: string | null;
   codigo_grupo: string | null;
   comprado_em: string | null;
+  /** Veio de renovação de assinatura (evento `subscription_renewed` ou cobrança 2+ da assinatura). */
+  renovacao: boolean;
 }
 
 /**
@@ -123,7 +125,15 @@ export function vendaDoWebhook(corpo: unknown): VendaNormalizada | null {
     origem_src: src,
     codigo_grupo: codigoDoGrupo(src),
     comprado_em: dataDaKiwify(o.approved_date) ?? dataDaKiwify(o.created_at),
+    renovacao: /renew/i.test(texto(o.webhook_event_type) ?? "") || cobrancaDeRenovacao(obj(o.Subscription)),
   };
+}
+
+/** Assinatura com mais de uma cobrança paga = esta é renovação. */
+function cobrancaDeRenovacao(assinatura: Record<string, unknown>): boolean {
+  const cobrancas = obj(assinatura.charges);
+  const completas = Array.isArray(cobrancas.completed) ? cobrancas.completed.length : 0;
+  return completas > 1;
 }
 
 /** Linha da planilha "Vendas → Exportar" da Kiwify → venda. */
@@ -146,5 +156,6 @@ export function vendaDaPlanilha(linha: Record<string, string>): VendaNormalizada
     origem_src: src,
     codigo_grupo: codigoDoGrupo(src),
     comprado_em: dataDaKiwify(linha["Data de Criação"]),
+    renovacao: /renova/i.test(texto(linha["Tipo"]) ?? texto(linha["Tipo de cobrança"]) ?? ""),
   };
 }

@@ -63,6 +63,9 @@ export function filtrosAuxiliaresDaContagem(
   if (fila && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(fila)) {
     filtros.push(["sector_id", fila]);
   }
+  // Inbox (privado) e aba Grupos contam cada um o seu lado.
+  const grupo = sp.get("is_group");
+  if (grupo === "true" || grupo === "false") filtros.push(["is_group", grupo === "true"]);
   const atendente = sp.get("assigned_to");
   if (atendente && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(atendente)) {
     filtros.push(["assigned_to_user_id", atendente]);

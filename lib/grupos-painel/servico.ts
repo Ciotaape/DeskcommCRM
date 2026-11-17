@@ -15,6 +15,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { CHANNEL_SESSION_REF_COLUMNS, resolveSessionRef } from "@/lib/channels/session-ref";
 import type { ChannelSessionRef } from "@/lib/channels/session-ref";
 import { getWahaClient } from "@/lib/waha/client";
+import { alternarGrupo, criarDepsDeGrupos } from "@/lib/grupos/servico";
+import type { ClienteConhecido, SituacaoDoCliente } from "./situacao";
 import { chaveDeTelefone } from "./telefone";
 
 export interface ResumoDoGrupo {
@@ -362,4 +364,92 @@ export async function detalheDoGrupo(admin: SupabaseClient, org: string, grupoId
     membros: detalhados,
     compradoresForaDoGrupo: fora,
   };
+}
+
+/**
+ * Liga (ou desliga) a ENTRADA das mensagens dos grupos acompanhados na aba
+ * Grupos › Conversas. É o mesmo `alternarGrupo` de Conexões › Grupos: o painel
+ * não tem caminho próprio para o WhatsApp, só aperta o mesmo botão por quem
+ * administra. Erro de um grupo não derruba os outros.
+ */
+export async function ligarEntradaDosGrupos(
+  admin: SupabaseClient,
+  org: string,
+  e: { actorUserId: string; requestId: string; soGrupoId?: string; ligar?: boolean },
+): Promise<{ ligados: number; falhas: number }> {
+  let consulta = admin
+    .from("grupos_painel")
+    .select("id, channel_session_id, group_chat_id, subject, acompanhar")
+    .eq("organization_id", org);
+  consulta = e.soGrupoId ? consulta.eq("id", e.soGrupoId) : consulta.eq("acompanhar", true);
+  const { data, error } = await consulta;
+  if (error) throw error;
+  const deps = criarDepsDeGrupos(admin);
+  let ligados = 0;
+  let falhas = 0;
+  for (const g of (data ?? []) as Array<{ channel_session_id: string; group_chat_id: string; subject: string | null }>) {
+    try {
+      await alternarGrupo(deps, {
+        organizationId: org,
+        channelSessionId: g.channel_session_id,
+        groupChatId: g.group_chat_id,
+        subject: g.subject,
+        ligar: e.ligar ?? true,
+        actorUserId: e.actorUserId,
+        requestId: e.requestId,
+      });
+      ligados += 1;
+    } catch {
+      falhas += 1;
+    }
+  }
+  return { ligados, falhas };
+}
+
+/**
+ * A situação de cada telefone que já comprou ou foi marcado à mão, pela chave
+ * de telefone. Quem não está no mapa é "ainda não é cliente".
+ * Renovou = alguma venda marcada como renovação, ou duas ou mais compras pagas.
+ */
+export async function clientesConhecidos(admin: SupabaseClient, org: string): Promise<Record<string, ClienteConhecido>> {
+  const vendas = await lerTudo<{ telefone_chave: string | null; valor_cents: number | null; renovacao: boolean | null; comprado_em: string | null }>(
+    (de, ate) =>
+      admin
+        .from("vendas_externas")
+        .select("telefone_chave, valor_cents, renovacao, comprado_em")
+        .eq("organization_id", org)
+        .eq("status", "paga")
+        .not("telefone_chave", "is", null)
+        .order("id")
+        .range(de, ate),
+  );
+  const mapa: Record<string, ClienteConhecido> = {};
+  for (const v of vendas) {
+    const chave = v.telefone_chave as string;
+    const atual = mapa[chave] ?? { situacao: "comprou", origem: "vendas", compras: 0, valor_cents: 0, ultima_compra: null };
+    atual.compras += 1;
+    atual.valor_cents += v.valor_cents ?? 0;
+    if (v.comprado_em && (!atual.ultima_compra || v.comprado_em > atual.ultima_compra)) atual.ultima_compra = v.comprado_em;
+    if (v.renovacao || atual.compras >= 2) atual.situacao = "renovou";
+    mapa[chave] = atual;
+  }
+  const marcacoes = await lerTudo<{ telefone_chave: string; situacao: SituacaoDoCliente }>((de, ate) =>
+    admin
+      .from("grupos_painel_marcacoes")
+      .select("telefone_chave, situacao")
+      .eq("organization_id", org)
+      .order("id")
+      .range(de, ate),
+  );
+  for (const m of marcacoes) {
+    const atual = mapa[m.telefone_chave];
+    mapa[m.telefone_chave] = {
+      situacao: m.situacao,
+      origem: "manual",
+      compras: atual?.compras ?? 0,
+      valor_cents: atual?.valor_cents ?? 0,
+      ultima_compra: atual?.ultima_compra ?? null,
+    };
+  }
+  return mapa;
 }

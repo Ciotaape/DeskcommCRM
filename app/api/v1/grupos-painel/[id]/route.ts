@@ -9,7 +9,7 @@ import { z } from "zod";
 import { fail, ok } from "@/lib/api/wrappers";
 import { audit } from "@/lib/audit";
 import { requireRole } from "@/lib/auth/require-role";
-import { detalheDoGrupo, sincronizarGrupos } from "@/lib/grupos-painel/servico";
+import { detalheDoGrupo, ligarEntradaDosGrupos, sincronizarGrupos } from "@/lib/grupos-painel/servico";
 import { requireSupportWrite } from "@/lib/impersonate/support";
 import { logger } from "@/lib/logger";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -82,6 +82,20 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
       logger.warn("grupos-painel: sincronização do grupo falhou", { requestId, causa: err instanceof Error ? err.message : String(err) }),
     );
   }
+  // Acompanhar também liga/desliga a entrada das mensagens do grupo na aba
+  // Grupos › Conversas — o mesmo interruptor de Conexões › Grupos.
+  let entrada: { ligados: number; falhas: number } | null = null;
+  if (corpo.data.acompanhar !== undefined) {
+    entrada = await ligarEntradaDosGrupos(admin, authz.org.orgId, {
+      actorUserId: authz.user.id,
+      requestId,
+      soGrupoId: id.data,
+      ligar: corpo.data.acompanhar,
+    }).catch((err) => {
+      logger.warn("grupos-painel: não deu para ligar a entrada do grupo", { requestId, causa: err instanceof Error ? err.message : String(err) });
+      return null;
+    });
+  }
   void audit({
     action: "grupos_painel.updated",
     actorUserId: authz.user.id,
@@ -90,5 +104,5 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     requestId,
     metadata: { grupo_id: id.data, acompanhar: corpo.data.acompanhar, codigo_origem: corpo.data.codigo_origem },
   });
-  return ok(data, { requestId });
+  return ok({ ...data, entrada }, { requestId });
 }

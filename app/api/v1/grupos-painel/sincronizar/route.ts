@@ -7,7 +7,7 @@ import { randomUUID } from "node:crypto";
 import { fail, ok } from "@/lib/api/wrappers";
 import { audit } from "@/lib/audit";
 import { requireRole } from "@/lib/auth/require-role";
-import { sincronizarGrupos } from "@/lib/grupos-painel/servico";
+import { ligarEntradaDosGrupos, sincronizarGrupos } from "@/lib/grupos-painel/servico";
 import { requireSupportWrite } from "@/lib/impersonate/support";
 import { logger } from "@/lib/logger";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -22,7 +22,14 @@ export async function POST(): Promise<Response> {
   const authz = await requireRole("manager", { requestId, resource: "grupos_painel" });
   if (!authz.ok) return authz.response;
   try {
-    const r = await sincronizarGrupos(createAdminClient(), authz.org.orgId);
+    const admin = createAdminClient();
+    const sinc = await sincronizarGrupos(admin, authz.org.orgId);
+    // Os grupos acompanhados entram (ou continuam) na aba Grupos › Conversas.
+    const entrada = await ligarEntradaDosGrupos(admin, authz.org.orgId, { actorUserId: authz.user.id, requestId }).catch(() => ({
+      ligados: 0,
+      falhas: -1,
+    }));
+    const r = { ...sinc, conversas_ligadas: entrada.ligados, conversas_falhas: entrada.falhas };
     void audit({
       action: "grupos_painel.synced",
       actorUserId: authz.user.id,

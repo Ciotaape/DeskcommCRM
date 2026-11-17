@@ -97,7 +97,11 @@ export interface InboxFiltersValue {
   tag?: string | readonly string[];
   /** E ou OU entre as etiquetas escolhidas (#1274). `e` é o padrão. */
   tagMode?: ModoDeEtiqueta;
-  /** A aba "Grupos" (Task 10): manda `is_group=true` na listagem. */
+  /**
+   * Em que lado a barra está: `true` na aba Grupos, `false` no Inbox. Não é
+   * botão — quem decide é a tela (`InboxLayout modo`); a barra só usa para os
+   * contadores das abas contarem o mesmo lado que a lista mostra.
+   */
   onlyGroups?: boolean;
   /**
    * Só as conversas deste atendente (id do usuário). Filtro de GERENTE para cima;
@@ -290,6 +294,7 @@ export function InboxFilters({ value, onChange, filas: filasDaOrganizacao }: Pro
     tagMode: value.tagMode,
     channel_session_id: value.channel_session_id,
     sector_id: value.sector_id,
+    is_group: value.onlyGroups,
   });
 
   /**
@@ -547,23 +552,8 @@ export function InboxFilters({ value, onChange, filas: filasDaOrganizacao }: Pro
           >
             {t("Não lidos")}
           </button>
-          {/* MESMO PADRÃO do botão acima: filtro auxiliar pressionável, na
-              mesma linha. "Grupos" manda `is_group=true` na listagem — sem ele
-              a aba mostra tudo, individual e grupo misturados, como hoje. */}
-          <button
-            type="button"
-            aria-pressed={value.onlyGroups ?? false}
-            onClick={() => onChange({ ...value, onlyGroups: !value.onlyGroups })}
-            className={cn(
-              "h-9 shrink-0 rounded-full border px-3 text-xs font-medium transition-colors",
-              "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-              value.onlyGroups
-                ? "border-accent bg-accent text-accent-foreground"
-                : "border-border bg-transparent text-text-muted hover:bg-surface-elevated",
-            )}
-          >
-            {t("Grupos")}
-          </button>
+          {/* Grupos não têm mais botão aqui: o Inbox mostra só o privado e os
+              grupos moram na aba Grupos (`InboxLayout modo="grupos"`). */}
         </div>
 
         {(showChannelSwitch || mostrarSeletorDeTag || mostrarSeletorDeAtendente) && (

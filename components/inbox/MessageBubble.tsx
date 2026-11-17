@@ -21,6 +21,7 @@ import type { Message } from "@/lib/types/messaging";
 import type { ReacaoNoBalao } from "@/lib/inbox/reacoes-no-fio";
 import { lerMencoesDeGrupo, textoComMencoesResolvidas } from "@/lib/messaging/mencoes-de-grupo";
 import { lerRemetenteDeGrupo, rotuloDoRemetente } from "@/lib/messaging/remetente-de-grupo";
+import { EtiquetaDoParticipante } from "@/components/inbox/grupos/EtiquetaDoParticipante";
 import { motivoDaFalhaDaMensagem } from "@/lib/inbox/motivo-da-falha";
 import { primeiroNomeDeQuemEnviou } from "@/lib/inbox/nome-no-balao";
 import { hrefDoCompromisso, puloDaAgendaDaMensagem } from "@/lib/inbox/pulo-da-agenda";
@@ -686,9 +687,14 @@ export function MessageBubble({
           </CitacaoDaBolha>
         )}
         {remetente && (
-          <p className="mb-0.5 text-[11px] font-medium text-muted-foreground">
-            {rotuloDoRemetente(remetente)}
-          </p>
+          <div className="mb-0.5 flex flex-wrap items-center gap-1.5">
+            <p className="text-[11px] font-medium text-muted-foreground">
+              {rotuloDoRemetente(remetente)}
+            </p>
+            {/* Só na aba Grupos (provedor presente): Comprou / Renovou / Ainda
+                não é cliente, e o atalho "Chamar no privado". */}
+            <EtiquetaDoParticipante telefone={remetente.phone} nome={remetente.name} />
+          </div>
         )}
         {senderLabel && (
           <div className="mb-0.5 flex min-w-0 max-w-full items-center gap-1 text-[11px] font-semibold opacity-80">

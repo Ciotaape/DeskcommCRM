@@ -53,6 +53,8 @@ export interface FiltrosDaContagem {
    * tem de contar a fila que a lista mostra, não o total da aba.
    */
   sector_id?: string;
+  /** Inbox (privado) = false; aba Grupos = true. */
+  is_group?: boolean;
 }
 
 /**
@@ -75,6 +77,7 @@ export function useConversationCounts(
   if (filtros.channel_session_id) qs.set("channel_session_id", filtros.channel_session_id);
   if (filtros.assigned_to) qs.set("assigned_to", filtros.assigned_to);
   if (filtros.sector_id) qs.set("sector_id", filtros.sector_id);
+  if (filtros.is_group !== undefined) qs.set("is_group", filtros.is_group ? "true" : "false");
   const sufixo = qs.toString();
 
   return useQuery({
