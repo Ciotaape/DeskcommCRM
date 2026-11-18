@@ -80,7 +80,7 @@ export function AbordagemDosGrupos() {
         .post<{ data: { conversation_id: string; enviadas: number } }>("/api/v1/grupos-painel/abordagem", {
           telefone: p.telefone,
           nome: p.nome,
-          template_id: modeloId,
+          template_id: modeloId || null,
         })
         .then((r) => ({ pessoa: p, ...r.data })),
     onSuccess: (r) => {
@@ -126,7 +126,7 @@ export function AbordagemDosGrupos() {
             onChange={(e) => escolher(e.target.value)}
             className="h-9 min-w-64 rounded-md border border-border bg-background px-2 text-sm"
           >
-            <option value="">{t("Escolha uma resposta rápida")}</option>
+            <option value="">{t("Padrão: resposta rápida Abordagem")}</option>
             {(modelos.data ?? []).map((m) => (
               <option key={m.id} value={m.id}>
                 {m.title}
@@ -207,7 +207,7 @@ export function AbordagemDosGrupos() {
                           {t("Abordado em")} {new Date(p.abordado_em).toLocaleDateString(tag)}
                         </Badge>
                       ) : (
-                        <Button size="sm" disabled={!modeloId || enviando} onClick={() => abordar.mutate(p)}>
+                        <Button size="sm" disabled={enviando} onClick={() => abordar.mutate(p)}>
                           <PaperPlaneTilt size={14} className="mr-1" aria-hidden />
                           {enviando ? t("Enviando…") : t("Abordar")}
                         </Button>

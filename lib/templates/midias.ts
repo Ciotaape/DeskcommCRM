@@ -57,8 +57,11 @@ export const TAMANHO_MAXIMO_DO_AUDIO = 16 * 1024 * 1024;
 /** Os áudios aceitos — o que o WhatsApp oficial entrega e reproduz. */
 export type TipoDeAudio = "audio/ogg" | "audio/mpeg" | "audio/aac" | "audio/amr" | "audio/wav";
 
-/** Todo tipo aceito em `midias`: as imagens da #2526 e o áudio da #2833. */
-export type TipoDeMidia = TipoDeLogo | TipoDeAudio;
+/** Vídeo MP4 (H.264), o que o WhatsApp reproduz no celular de qualquer um. */
+export type TipoDeVideo = "video/mp4";
+
+/** Todo tipo aceito em `midias`: imagens (#2526), áudio (#2833) e vídeo MP4. */
+export type TipoDeMidia = TipoDeLogo | TipoDeAudio | TipoDeVideo;
 
 /** O que a linha guarda — e o que o compositor precisa para baixar e enviar. */
 export interface MidiaDeTemplate {
@@ -76,6 +79,7 @@ const EXTENSAO_DE: Record<TipoDeMidia, string> = {
   "audio/aac": "aac",
   "audio/amr": "amr",
   "audio/wav": "wav",
+  "video/mp4": "mp4",
 };
 
 /** A volta: a extensão do caminho decide o mime de quem lê. */
@@ -87,6 +91,7 @@ const MIME_DA_EXTENSAO: Record<string, TipoDeMidia> = {
   aac: "audio/aac",
   amr: "audio/amr",
   wav: "audio/wav",
+  mp4: "video/mp4",
 };
 
 /** As extensões que a rota pode ter gravado — fechadas, como o farejador. */
@@ -165,7 +170,25 @@ function farejarAudio(bytes: Uint8Array): TipoDeAudio | null {
  * NUNCA lê `file.type` nem a extensão do nome que o cliente mandou.
  */
 export function farejarTipoDeMidia(bytes: Uint8Array): TipoDeMidia | null {
-  return farejarLogo(bytes) ?? farejarAudio(bytes);
+  return farejarLogo(bytes) ?? farejarAudio(bytes) ?? farejarVideo(bytes);
+}
+
+/**
+ * MP4 de VÍDEO: caixa `ftyp` nos bytes 4–8 e uma marca de vídeo. As marcas de
+ * áudio do mesmo contêiner (M4A/M4B/M4P) ficam de fora — é a leitura da marca
+ * que o comentário de `farejarAudio` pedia para separar os dois.
+ */
+const FTYP = [0x66, 0x74, 0x79, 0x70] as const;
+const MARCAS_DE_AUDIO = new Set(["M4A ", "M4B ", "M4P "]);
+function farejarVideo(bytes: Uint8Array): TipoDeVideo | null {
+  if (bytes.length < 12 || !comecaCom(bytes.subarray(4), FTYP)) return null;
+  const marca = String.fromCharCode(...bytes.subarray(8, 12));
+  return MARCAS_DE_AUDIO.has(marca) ? null : "video/mp4";
+}
+
+/** É uma entrada de VÍDEO? Lido do caminho, como o áudio. */
+export function ehMidiaDeVideo(midia: { storage_path: string }): boolean {
+  return mimeDaMidia(midia.storage_path) === "video/mp4";
 }
 
 /** A extensão que a rota grava no caminho para cada tipo farejado. */
@@ -175,7 +198,8 @@ export function extensaoDaMidia(tipo: TipoDeMidia): string {
 
 /** O teto de bytes que vale para o tipo já farejado. */
 export function tetoDaMidia(tipo: TipoDeMidia): number {
-  return tipo.startsWith("audio/") ? TAMANHO_MAXIMO_DO_AUDIO : TAMANHO_MAXIMO_DA_MIDIA;
+  // Vídeo usa o teto do áudio (16 MB), o do WhatsApp para vídeo também.
+  return tipo.startsWith("audio/") || tipo.startsWith("video/") ? TAMANHO_MAXIMO_DO_AUDIO : TAMANHO_MAXIMO_DA_MIDIA;
 }
 
 /** O prefixo que a rota de upload gera para um template. */

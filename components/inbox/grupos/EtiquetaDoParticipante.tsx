@@ -15,16 +15,24 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useT } from "@/hooks/i18n/useT";
 import { ROTULO_DA_SITUACAO, type ClienteConhecido, type SituacaoDoCliente } from "@/lib/grupos-painel/situacao";
-import { CaretDown, WhatsappLogo } from "@/lib/ui/icons";
+import { CaretDown, PaperPlaneTilt, WhatsappLogo } from "@/lib/ui/icons";
 import { cn } from "@/lib/utils";
 
 export interface ValorDosParticipantes {
   situacaoDe: (telefone: string | null) => { situacao: SituacaoDoCliente; info: ClienteConhecido | null };
   chamarNoPrivado: (telefone: string, nome: string | null) => void;
+  /** Manda a mensagem padrão da abordagem no privado, sem sair do grupo. */
+  abordar: (telefone: string, nome: string | null, templateId?: string) => void;
+  /** As respostas rápidas cujo título começa com "Abordagem" — cada uma é uma versão da mensagem. */
+  modelosDeAbordagem: Array<{ id: string; title: string }>;
+  abordando: boolean;
   marcar: (telefone: string, situacao: SituacaoDoCliente | null) => void;
   podeMarcar: boolean;
   abrindo: boolean;
@@ -67,6 +75,27 @@ export function EtiquetaDoParticipante({ telefone, nome }: { telefone: string | 
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-56">
         <DropdownMenuLabel className="text-xs">{nome ?? telefone}</DropdownMenuLabel>
+        {situacao === "nao_cliente" &&
+          (ctx.modelosDeAbordagem.length > 1 ? (
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger disabled={ctx.abordando}>
+                <PaperPlaneTilt size={14} className="mr-2" aria-hidden />
+                {t("Abordar no privado")}
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent className="w-60">
+                {ctx.modelosDeAbordagem.map((m) => (
+                  <DropdownMenuItem key={m.id} onSelect={() => ctx.abordar(telefone, nome, m.id)}>
+                    {m.title}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+          ) : (
+            <DropdownMenuItem disabled={ctx.abordando} onSelect={() => ctx.abordar(telefone, nome, ctx.modelosDeAbordagem[0]?.id)}>
+              <PaperPlaneTilt size={14} className="mr-2" aria-hidden />
+              {t("Abordar no privado")}
+            </DropdownMenuItem>
+          ))}
         <DropdownMenuItem disabled={ctx.abrindo} onSelect={() => ctx.chamarNoPrivado(telefone, nome)}>
           <WhatsappLogo size={14} className="mr-2" aria-hidden />
           {t("Chamar no privado")}

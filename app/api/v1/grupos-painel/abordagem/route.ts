@@ -22,7 +22,7 @@ export const maxDuration = 60;
 const corpoSchema = z.object({
   telefone: z.string().trim().min(8).max(30),
   nome: z.string().trim().min(1).max(200).nullable().optional(),
-  template_id: z.string().uuid(),
+  template_id: z.string().uuid().nullable().optional(),
 });
 
 export async function GET(): Promise<Response> {
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest): Promise<Response> {
       requestId,
       telefone: corpo.data.telefone,
       nome: corpo.data.nome ?? null,
-      templateId: corpo.data.template_id,
+      templateId: corpo.data.template_id ?? null,
     });
     // A conversa aberta pelo clique é de quem clicou (se estiver livre).
     try {
@@ -80,7 +80,11 @@ export async function POST(req: NextRequest): Promise<Response> {
     return ok(r, { requestId });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    if (msg === "modelo_nao_encontrado") return fail("not_found", "Resposta rápida não encontrada.", 404, { requestId });
+    if (msg === "ja_abordado") {
+      const d = (err as { detalhe?: { abordado_em?: string; conversation_id?: string | null } }).detalhe;
+      return fail("state_conflict", "Esta pessoa já foi abordada.", 409, { requestId, details: d ?? {} });
+    }
+    if (msg === "modelo_nao_encontrado") return fail("not_found", "Crie uma resposta rápida compartilhada com o título começando por Abordagem.", 404, { requestId });
     if (msg === "telefone_invalido") return fail("validation_error", "Telefone inválido.", 400, { requestId });
     if (msg === "session_unavailable")
       return fail("state_conflict", "O número do WhatsApp está desconectado. Reconecte em Conexões.", 409, { requestId });

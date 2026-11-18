@@ -36,6 +36,7 @@ import {
   TAMANHO_MAXIMO_DA_MIDIA,
   TAMANHO_MAXIMO_DO_AUDIO,
   ehMidiaDeAudio,
+  ehMidiaDeVideo,
   midiaDeAudioDe,
   type MidiaDeTemplate,
 } from "@/lib/templates/midias";
@@ -225,12 +226,17 @@ export function TemplateFormDialog({ open, onOpenChange, canShare, template, gru
     for (const file of Array.from(lista)) {
       // A MESMA régua da rota (que confere pela ASSINATURA dos bytes): aqui é
       // só o aviso honesto antes do upload, não a autorização.
-      if (!/^image\/(jpeg|png)$/.test(file.type)) {
-        toast.error(t("A imagem precisa ser JPG ou PNG."));
+      const video = file.type === "video/mp4";
+      if (!video && !/^image\/(jpeg|png)$/.test(file.type)) {
+        toast.error(t("A mídia precisa ser JPG, PNG ou vídeo MP4."));
         continue;
       }
-      if (file.size > TAMANHO_MAXIMO_DA_MIDIA) {
+      if (!video && file.size > TAMANHO_MAXIMO_DA_MIDIA) {
         toast.error(t("A imagem precisa ter até 5 MB."));
+        continue;
+      }
+      if (video && file.size > TAMANHO_MAXIMO_DO_AUDIO) {
+        toast.error(t("O vídeo precisa ter até 16 MB."));
         continue;
       }
       aceitas.push(file);
@@ -433,17 +439,21 @@ export function TemplateFormDialog({ open, onOpenChange, canShare, template, gru
           <div className="space-y-2">
             <Label htmlFor="tpl-midias">{t("Imagens (opcional)")}</Label>
             <p className="text-xs text-muted-foreground">
-              {t("JPG ou PNG, até 5 MB por imagem. A imagem vai junto com o texto.")}
+              {t("JPG ou PNG até 5 MB, ou vídeo MP4 até 16 MB. Vai junto com o texto.")}
             </p>
             {(mantidas.length > 0 || novas.length > 0) && (
               <ul className="flex flex-wrap gap-2">
                 {mantidas.map((midia) => (
                   <li key={midia.storage_path} className="relative">
-                    <img
-                      src={urlDaGravada(midia)}
-                      alt={t("Imagem da resposta rápida")}
-                      className="size-16 rounded-md border border-border object-cover"
-                    />
+                    {ehMidiaDeVideo(midia) ? (
+                      <video src={urlDaGravada(midia)} muted preload="metadata" className="size-16 rounded-md border border-border object-cover" />
+                    ) : (
+                      <img
+                        src={urlDaGravada(midia)}
+                        alt={t("Imagem da resposta rápida")}
+                        className="size-16 rounded-md border border-border object-cover"
+                      />
+                    )}
                     <button
                       type="button"
                       onClick={() => setRemovidas((atual) => [...atual, midia.storage_path])}
@@ -456,11 +466,15 @@ export function TemplateFormDialog({ open, onOpenChange, canShare, template, gru
                 ))}
                 {novas.map((file, i) => (
                   <li key={`${file.name}-${i}`} className="relative">
-                    <img
-                      src={urlsNovas[i]}
-                      alt={t("Prévia da imagem")}
-                      className="size-16 rounded-md border border-border object-cover"
-                    />
+                    {file.type === "video/mp4" ? (
+                      <video src={urlsNovas[i]} muted preload="metadata" className="size-16 rounded-md border border-border object-cover" />
+                    ) : (
+                      <img
+                        src={urlsNovas[i]}
+                        alt={t("Prévia da imagem")}
+                        className="size-16 rounded-md border border-border object-cover"
+                      />
+                    )}
                     <button
                       type="button"
                       onClick={() => setNovas((atual) => atual.filter((_, j) => j !== i))}
@@ -477,7 +491,7 @@ export function TemplateFormDialog({ open, onOpenChange, canShare, template, gru
               <Input
                 id="tpl-midias"
                 type="file"
-                accept="image/jpeg,image/png"
+                accept="image/jpeg,image/png,video/mp4"
                 multiple
                 className="sr-only"
                 onChange={(e) => {
@@ -491,7 +505,7 @@ export function TemplateFormDialog({ open, onOpenChange, canShare, template, gru
                 htmlFor="tpl-midias"
                 className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-input px-3 py-1.5 text-sm hover:bg-muted"
               >
-                {t("Adicionar imagem")}
+                {t("Adicionar imagem ou vídeo")}
               </Label>
               {estourou && (
                 <p className="text-xs text-destructive">

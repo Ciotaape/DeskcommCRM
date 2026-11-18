@@ -173,17 +173,27 @@ export interface ResultadoDaAbordagem {
 export async function abordar(
   admin: SupabaseClient,
   org: string,
-  e: { userId: string; requestId: string; telefone: string; nome: string | null; templateId: string },
+  e: { userId: string; requestId: string; telefone: string; nome: string | null; templateId: string | null },
 ): Promise<ResultadoDaAbordagem> {
   const chave = chaveDeTelefone(e.telefone);
   if (!chave) throw new Error("telefone_invalido");
 
-  const { data: tpl } = await admin
-    .from("message_templates")
-    .select("id, body, midias")
+  // Uma abordagem por pessoa: o segundo clique não manda a mensagem de novo.
+  const { data: ja } = await admin
+    .from("grupos_abordagens")
+    .select("abordado_em, conversation_id")
     .eq("organization_id", org)
-    .eq("id", e.templateId)
+    .eq("telefone_chave", chave)
     .maybeSingle();
+  if (ja) throw Object.assign(new Error("ja_abordado"), { detalhe: ja });
+
+  // Sem modelo escolhido, vale a resposta rápida compartilhada cujo título
+  // começa com "Abordagem" (a mensagem padrão da abordagem).
+  let consulta = admin.from("message_templates").select("id, body, midias").eq("organization_id", org);
+  consulta = e.templateId
+    ? consulta.eq("id", e.templateId)
+    : consulta.ilike("title", "abordagem%").is("owner_user_id", null).order("created_at", { ascending: true }).limit(1);
+  const { data: tpl } = await consulta.maybeSingle();
   if (!tpl) throw new Error("modelo_nao_encontrado");
   const modelo = tpl as { id: string; body: string; midias: MidiaDeTemplate[] | null };
 
@@ -221,7 +231,7 @@ export async function abordar(
     if (!data?.signedUrl) continue;
     await sendMessageHandler(admin, ctx, {
       conversation_id: aberta.conversation_id,
-      type: midia.media_mime.startsWith("audio/") ? "audio" : "image",
+      type: midia.media_mime.startsWith("audio/") ? "audio" : midia.media_mime.startsWith("video/") ? "video" : "image",
       media_url: data.signedUrl,
       metadata: { source: "grupos_abordagem", media_mime: midia.media_mime },
     });

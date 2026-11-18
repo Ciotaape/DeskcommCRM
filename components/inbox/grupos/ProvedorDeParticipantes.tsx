@@ -13,6 +13,7 @@ import { useConversaNovaComEscolhaDeCanal } from "@/components/channels/SeletorD
 import { useAuth } from "@/hooks/auth/AuthProvider";
 import { useT } from "@/hooks/i18n/useT";
 import { apiClient } from "@/lib/api/client";
+import { ApiError } from "@/lib/api/types";
 import { ROLE_RANK } from "@/lib/auth/types";
 import type { ClienteConhecido, SituacaoDoCliente } from "@/lib/grupos-painel/situacao";
 import { chaveDeTelefone } from "@/lib/grupos-painel/telefone";
@@ -45,6 +46,24 @@ export function ProvedorDeParticipantes({ children }: { children: ReactNode }) {
     onError: () => toast.error(t("Não foi possível salvar a etiqueta.")),
   });
 
+  const modelos = useQuery({
+    queryKey: ["message-templates"],
+    staleTime: 60_000,
+    queryFn: () =>
+      apiClient.get<{ data: Array<{ id: string; title: string }> }>("/api/v1/message-templates").then((r) => r.data),
+  });
+  const modelosDeAbordagem = useMemo(
+    () => (modelos.data ?? []).filter((m) => /^abordagem/i.test(m.title.trim())).map((m) => ({ id: m.id, title: m.title })),
+    [modelos.data],
+  );
+
+  const abordagem = useMutation({
+    mutationFn: (v: { telefone: string; nome: string | null; templateId?: string }) =>
+      apiClient.post("/api/v1/grupos-painel/abordagem", { telefone: v.telefone, nome: v.nome, template_id: v.templateId ?? null }),
+    onSuccess: (_r, v) => toast.success(t("Abordagem enviada no privado de {nome}.").replace("{nome}", v.nome ?? v.telefone)),
+    onError: (e) => toast.error(e instanceof ApiError ? e.message : t("Não foi possível enviar a abordagem agora.")),
+  });
+
   const { iniciarConversa, seletor, abrindo } = useConversaNovaComEscolhaDeCanal({
     aoAbrir: async (conversationId) => {
       await assumirConversaAoAbrir(conversationId, { userId: user.id, t });
@@ -69,10 +88,13 @@ export function ProvedorDeParticipantes({ children }: { children: ReactNode }) {
       chamarNoPrivado: (telefone, nome) =>
         void iniciarConversa({ phone_number: telefone, ...(nome ? { name: nome } : {}) }),
       marcar: (telefone, situacao) => marcacao.mutate({ telefone, situacao }),
+      abordar: (telefone, nome, templateId) => abordagem.mutate({ telefone, nome, templateId }),
+      modelosDeAbordagem,
+      abordando: abordagem.isPending,
       podeMarcar,
       abrindo,
     }),
-    [situacaoDe, iniciarConversa, marcacao, podeMarcar, abrindo],
+    [situacaoDe, iniciarConversa, marcacao, abordagem, modelosDeAbordagem, podeMarcar, abrindo],
   );
 
   return (
