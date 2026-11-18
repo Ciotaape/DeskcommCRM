@@ -61,8 +61,8 @@ export function AbordagemDosGrupos() {
     queryFn: () => apiClient.get<{ data: PessoaParaAbordar[] }>("/api/v1/grupos-painel/abordagem").then((r) => r.data),
   });
   const modelos = useQuery({
-    queryKey: ["message-templates"],
-    queryFn: () => apiClient.get<{ data: Modelo[] }>("/api/v1/message-templates").then((r) => r.data),
+    queryKey: ["grupos-painel", "modelos-de-abordagem"],
+    queryFn: () => apiClient.get<{ data: Modelo[] }>("/api/v1/message-templates").then((r) => (Array.isArray(r.data) ? r.data : [])),
   });
 
   const escolher = (id: string) => {

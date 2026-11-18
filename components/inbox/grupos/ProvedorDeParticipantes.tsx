@@ -47,10 +47,10 @@ export function ProvedorDeParticipantes({ children }: { children: ReactNode }) {
   });
 
   const modelos = useQuery({
-    queryKey: ["message-templates"],
+    queryKey: ["grupos-painel", "modelos-de-abordagem"],
     staleTime: 60_000,
     queryFn: () =>
-      apiClient.get<{ data: Array<{ id: string; title: string }> }>("/api/v1/message-templates").then((r) => r.data),
+      apiClient.get<{ data: Array<{ id: string; title: string }> }>("/api/v1/message-templates").then((r) => (Array.isArray(r.data) ? r.data : [])),
   });
   const modelosDeAbordagem = useMemo(
     () => (modelos.data ?? []).filter((m) => /^abordagem/i.test(m.title.trim())).map((m) => ({ id: m.id, title: m.title })),
