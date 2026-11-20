@@ -3,6 +3,7 @@
 import { useAuth } from "@/hooks/auth/AuthProvider";
 import { useConversationCounts } from "@/hooks/inbox/useConversationCounts";
 import { useT } from "@/hooks/i18n/useT";
+import { NumeroSalta } from "@/components/ui/numero-salta";
 import { cn } from "@/lib/utils";
 
 /**
@@ -33,7 +34,7 @@ export function ContadorDaFila({ compacto }: { compacto: boolean }) {
         compacto ? "absolute top-1 right-1 h-2 w-2" : "ml-auto px-1.5 py-0.5",
       )}
     >
-      {compacto ? null : esperando}
+      {compacto ? null : <NumeroSalta valor={String(esperando)} />}
     </span>
   );
 }

@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useT } from "@/hooks/i18n/useT";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useTransition, type MouseEvent } from "react";
 import { ArrowRight, BookOpen, CaretDoubleLeft, CaretDoubleRight, CaretDown, Gear } from "@/lib/ui/icons";
 import { cn } from "@/lib/utils";
 import { toggleSidebar } from "@/app/actions/shell/toggleSidebar";
@@ -87,6 +87,57 @@ export function SidebarContent({
    * abertos, é o que faz "sem preferência salva" já significar "tudo aberto".
    */
   const [gruposFechados, setGruposFechados] = useState<Set<string>>(() => new Set());
+
+  // Destino escolhido ANTES de a rota terminar de carregar. O `pathname` só muda
+  // quando a página nova chega do servidor — às vezes um segundo depois do
+  // clique —, e o destaque esperando por ele é o que fazia a troca de seção
+  // parecer travada. Com o alvo otimista a pílula sai no MESMO quadro do clique;
+  // quando o `pathname` muda, o alvo deixa de valer sozinho (`de !== pathname`).
+  const [alvo, setAlvo] = useState<{ href: string; de: string } | null>(null);
+  const caminho = alvo && alvo.de === pathname ? alvo.href : pathname;
+  const ativoPorPrefixo = (href: string) => caminho === href || caminho.startsWith(href + "/");
+  const escolher = (href: string) => (e: MouseEvent<HTMLAnchorElement>) => {
+    if (e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && href !== pathname) {
+      setAlvo({ href, de: pathname });
+    }
+    onNavigate?.();
+  };
+
+  // A pílula que desliza até o destino ativo (transitions.dev, "Tabs sliding",
+  // na vertical): um elemento só, medido aqui e movido pelo CSS `.ds-nav-pilula`.
+  const navRef = useRef<HTMLElement | null>(null);
+  useLayoutEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+    let quadro = 0;
+    const medir = (semTransicao: boolean) => {
+      const ativo = nav.querySelector<HTMLElement>('a[aria-current="page"]');
+      if (!ativo) {
+        nav.removeAttribute("data-pilula");
+        return;
+      }
+      const caixa = nav.getBoundingClientRect();
+      const r = ativo.getBoundingClientRect();
+      nav.style.setProperty("--nav-y", `${r.top - caixa.top + nav.scrollTop}px`);
+      nav.style.setProperty("--nav-x", `${r.left - caixa.left}px`);
+      nav.style.setProperty("--nav-w", `${r.width}px`);
+      nav.style.setProperty("--nav-h", `${r.height}px`);
+      if (semTransicao || !nav.hasAttribute("data-pilula")) {
+        nav.setAttribute("data-pilula", "sem-transicao");
+        cancelAnimationFrame(quadro);
+        quadro = requestAnimationFrame(() => {
+          quadro = requestAnimationFrame(() => nav.setAttribute("data-pilula", "ativa"));
+        });
+      }
+    };
+    medir(false);
+    const tamanho = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(() => medir(true));
+    tamanho?.observe(nav);
+    return () => {
+      cancelAnimationFrame(quadro);
+      tamanho?.disconnect();
+    };
+  }, [caminho, collapsed, gruposFechados]);
   useEffect(() => {
     try {
       const salvo = window.localStorage.getItem(CHAVE_GRUPOS_FECHADOS);
@@ -321,9 +372,11 @@ export function SidebarContent({
         e nenhum destino novo apareceu aqui.
       */}
       <nav
-        className="flex-1 space-y-2 overflow-y-auto px-2 py-1"
+        ref={navRef}
+        className="ds-nav relative flex-1 space-y-2 overflow-y-auto px-2 py-1"
         aria-label={t("Navegação principal")}
       >
+        <span aria-hidden="true" className="ds-nav-pilula" />
         {grupos.map(({ group, items }) => {
           const tituloId = `nav-grupo-${group.id}`;
           // Recolhido o sidebar inteiro (rail de 64px), o grupo sempre mostra
@@ -368,7 +421,7 @@ export function SidebarContent({
                   className="space-y-1"
                 >
                   {items.map((item) => {
-                    const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+                    const isActive = ativoPorPrefixo(item.href);
                     const Icon = item.icon;
                     return (
                       <li key={item.href}>
@@ -377,19 +430,24 @@ export function SidebarContent({
                           {...intencao(item.href)}
                           title={collapsed ? t(item.label) : undefined}
                           aria-current={isActive ? "page" : undefined}
-                          onClick={onNavigate}
+                          onClick={escolher(item.href)}
                           className={cn(
                             // A classe do DESTINO é contrato estável para o CSS da
                             // tela Marca (#4463): `nav-item-inbox`, `nav-item-kanban`…
                             classeDoItem(item.href),
-                            "relative flex items-center gap-3 rounded-md px-3 py-1 text-sm transition-colors",
+                            "relative flex items-center gap-3 rounded-md px-3 py-1 text-sm transition-colors duration-200",
                             isActive
-                              ? "bg-accent text-accent-foreground"
-                              : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+                              ? "bg-accent-soft font-medium text-foreground"
+                              : "text-muted-foreground hover:bg-foreground/5 hover:text-foreground",
                             collapsed && "justify-center px-2",
                           )}
                         >
-                          <Icon size={18} weight={isActive ? "fill" : "regular"} aria-hidden />
+                          <Icon
+                            size={18}
+                            weight={isActive ? "fill" : "regular"}
+                            className={cn("shrink-0 transition-colors duration-200", isActive && "text-accent")}
+                            aria-hidden
+                          />
                           {!collapsed && <span className="truncate">{t(item.label)}</span>}
                           {item.healthDot && (
                             <ConnectionHealthDot
@@ -411,13 +469,13 @@ export function SidebarContent({
                         href={group.hub.href}
                         {...intencao(group.hub.href)}
                         title={collapsed ? t(group.hub.label) : undefined}
-                        aria-current={pathname === group.hub.href ? "page" : undefined}
-                        onClick={onNavigate}
+                        aria-current={caminho === group.hub.href ? "page" : undefined}
+                        onClick={escolher(group.hub.href)}
                         className={cn(
-                          "flex items-center gap-3 rounded-md px-3 py-1 text-sm transition-colors",
-                          pathname === group.hub.href
-                            ? "bg-accent text-accent-foreground"
-                            : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+                          "flex items-center gap-3 rounded-md px-3 py-1 text-sm transition-colors duration-200",
+                          caminho === group.hub.href
+                            ? "bg-accent-soft font-medium text-foreground"
+                            : "text-muted-foreground hover:bg-foreground/5 hover:text-foreground",
                           collapsed && "justify-center px-2",
                         )}
                       >
@@ -438,14 +496,14 @@ export function SidebarContent({
             href={rodape.href}
             {...intencao(rodape.href)}
             title={collapsed ? t(rodape.label) : undefined}
-            aria-current={pathname.startsWith(rodape.href) ? "page" : undefined}
-            onClick={onNavigate}
+            aria-current={ativoPorPrefixo(rodape.href) ? "page" : undefined}
+            onClick={escolher(rodape.href)}
             className={cn(
-              "mb-0.5 flex items-center gap-3 rounded-md px-3 py-1 text-sm transition-colors",
+              "mb-0.5 flex items-center gap-3 rounded-md px-3 py-1 text-sm transition-colors duration-200",
               classeDoItem(rodape.href),
-              pathname.startsWith(rodape.href)
-                ? "bg-accent text-accent-foreground"
-                : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+              ativoPorPrefixo(rodape.href)
+                ? "bg-accent-soft font-medium text-foreground"
+                : "text-muted-foreground hover:bg-foreground/5 hover:text-foreground",
               collapsed && "justify-center px-2",
             )}
           >
@@ -462,14 +520,14 @@ export function SidebarContent({
             href={ajuda.href}
             {...intencao(ajuda.href)}
             title={collapsed ? t(ajuda.label) : undefined}
-            aria-current={pathname.startsWith(ajuda.href) ? "page" : undefined}
-            onClick={onNavigate}
+            aria-current={ativoPorPrefixo(ajuda.href) ? "page" : undefined}
+            onClick={escolher(ajuda.href)}
             className={cn(
-              "mb-0.5 flex items-center gap-3 rounded-md px-3 py-1 text-sm transition-colors",
+              "mb-0.5 flex items-center gap-3 rounded-md px-3 py-1 text-sm transition-colors duration-200",
               classeDoItem(ajuda.href),
-              pathname.startsWith(ajuda.href)
-                ? "bg-accent text-accent-foreground"
-                : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+              ativoPorPrefixo(ajuda.href)
+                ? "bg-accent-soft font-medium text-foreground"
+                : "text-muted-foreground hover:bg-foreground/5 hover:text-foreground",
               collapsed && "justify-center px-2",
             )}
           >

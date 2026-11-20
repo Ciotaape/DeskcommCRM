@@ -2,6 +2,7 @@
 
 import { useT } from "@/hooks/i18n/useT";
 import { useCases } from "@/hooks/ai/useCases";
+import { NumeroSalta } from "@/components/ui/numero-salta";
 import { cn } from "@/lib/utils";
 
 /**
@@ -29,7 +30,7 @@ export function ContadorDeCasos({ compacto }: { compacto: boolean }) {
         compacto ? "absolute top-1 right-1 h-2 w-2" : "ml-auto px-1.5 py-0.5",
       )}
     >
-      {compacto ? null : pendentes}
+      {compacto ? null : <NumeroSalta valor={String(pendentes)} />}
     </span>
   );
 }

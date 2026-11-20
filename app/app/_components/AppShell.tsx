@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import { Sidebar } from "@/components/shell/Sidebar";
 import { TopBar } from "@/components/shell/TopBar";
 import { BarraInferior } from "@/components/shell/BarraInferior";
@@ -48,6 +49,33 @@ export function AppShell({ sidebarCollapsed, podeAtender, children }: AppShellPr
   // o `p-6` inteiro é rodapé. Com o painel de chamada na tela, é ele que
   // decide a faixa que o conteúdo perde, e ninguém mais mede isso por fora.
   const ocupacaoDoRodape = useOcupacaoDoRodape();
+
+  // Troca de SEÇÃO (Inbox → Funis → Grupos…): o conteúdo novo entra com um
+  // cross-blur curto (transitions.dev "Page side-by-side": 8px, 3px de blur,
+  // 250ms). Pela Web Animations API, sem classe nem wrapper: a animação não
+  // persiste depois de acabar (nada de `transform` sobrando no `<main>`) e não
+  // há div novo entre o `<main>` e as páginas que contam com ele como pai.
+  // Só quando o PRIMEIRO segmento muda — dentro do Inbox, abrir conversa não
+  // anima nada.
+  const mainRef = useRef<HTMLElement | null>(null);
+  const pathname = usePathname() ?? "";
+  const secao = pathname.split("/")[2] ?? "";
+  const secaoAnterior = useRef(secao);
+  useEffect(() => {
+    if (secaoAnterior.current === secao) return;
+    secaoAnterior.current = secao;
+    const main = mainRef.current;
+    if (!main || typeof main.animate !== "function") return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    main.animate(
+      [
+        { opacity: 0, transform: "translateY(8px)", filter: "blur(3px)" },
+        { opacity: 1, transform: "none", filter: "none" },
+      ],
+      { duration: 250, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
+    );
+  }, [secao]);
+
   return (
     /*
       `min-h-dvh`, e não `min-h-screen`: `100vh` no celular é a janela com a
@@ -110,6 +138,7 @@ export function AppShell({ sidebarCollapsed, podeAtender, children }: AppShellPr
           peça fixa quem cobre isso é o terceiro termo do `max()` do contrato.
         */}
         <main
+          ref={mainRef}
           className="flex-1 overflow-auto p-4 pb-area-segura sm:p-6"
           style={estiloDaReserva(ocupacaoDoRodape)}
           data-rodape-ocupado={ocupacaoDoRodape}

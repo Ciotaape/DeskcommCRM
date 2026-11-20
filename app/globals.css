@@ -1711,6 +1711,54 @@
   transition: color var(--t-open) var(--t-ease);
 }
 
+/* ---- Pílula do menu lateral -------------------------------------------
+   A mesma ideia das abas, na vertical: UM elemento que desliza até o destino
+   ativo (340ms na curva de superfície), com borda translúcida e um brilho de
+   1px no topo — em vez de cada item acender e apagar o próprio fundo. O
+   `SidebarContent` mede o item com `aria-current="page"` e escreve a posição;
+   o item ativo passa o fundo para a pílula assim que ela existe. O destaque
+   anda no clique, sem esperar a página nova carregar (alvo otimista). */
+.ds-nav-pilula {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: var(--radius-md);
+  background-color: var(--color-accent-soft);
+  border: 1px solid color-mix(in srgb, var(--color-text) 8%, transparent);
+  box-shadow:
+    inset 0 1px 0 0 color-mix(in srgb, var(--color-text) 7%, transparent),
+    0 6px 16px -4px rgb(16 24 40 / 0.1);
+  translate: var(--nav-x, 0) var(--nav-y, 0);
+  width: var(--nav-w, 0);
+  height: var(--nav-h, 0);
+  opacity: 0;
+  transition:
+    translate 340ms var(--t-ease),
+    width 240ms ease,
+    height 240ms ease,
+    opacity 160ms ease;
+}
+[data-theme="dark"] .ds-nav-pilula {
+  box-shadow:
+    inset 0 1px 0 0 color-mix(in srgb, var(--color-text) 7%, transparent),
+    0 7px 18px 0 rgb(3 6 12 / 0.35);
+}
+.ds-nav[data-pilula] > .ds-nav-pilula {
+  opacity: 1;
+}
+.ds-nav[data-pilula="sem-transicao"] > .ds-nav-pilula {
+  transition: none;
+}
+.ds-nav[data-pilula] a[aria-current="page"] {
+  background-color: transparent;
+}
+.ds-nav a {
+  position: relative;
+  z-index: 1;
+}
+
 /* ---- Conteúdo da aba (Panel reveal, versão curta) ----------------------
    O Radix desmonta a aba inativa, então a entrada roda a cada troca. Cross-blur
    de 2px + 4px de subida em 250ms: o olho percebe que o conteúdo TROCOU, sem
@@ -1807,20 +1855,32 @@ button[role="combobox"][aria-invalid="true"] {
    O ÚNICO momento orquestrado do produto: a Visão geral montando. Cada peça
    sobe 12px, perde 3px de blur e aparece em 500ms; a cascata é de 40ms por
    item (`--i`), com teto de 8 itens para o último não chegar atrasado. */
+/* Só `opacity` e `translate`: as duas rodam no compositor, então a cascata
+   não engasga mesmo com gráficos se montando ao lado. O blur de 3px da
+   receita original saiu daqui de propósito — `filter` anima na thread
+   principal e, com oito cartões ao mesmo tempo, era o que travava. */
 @keyframes ds-cascata {
   from {
     opacity: 0;
     translate: 0 12px;
-    filter: blur(3px);
   }
   to {
     opacity: 1;
     translate: 0 0;
-    filter: blur(0);
   }
+}
+/* Até a tela hidratar, o que vai entrar fica invisível e parado; o
+   componente troca para "vai" dois quadros depois de montar. */
+[data-entrada="espera"] .ds-cascata {
+  opacity: 0;
+  animation: none;
+}
+[data-entrada="espera"] .ds-tambor-faixa {
+  animation: none;
 }
 .ds-cascata {
   animation: ds-cascata var(--t-reveal) var(--t-ease) backwards;
+  will-change: opacity, translate;
   animation-delay: calc(var(--t-stagger) * min(var(--i, 0), 8));
 }
 
@@ -1870,6 +1930,7 @@ button[role="combobox"][aria-invalid="true"] {
 
 @media (prefers-reduced-motion: reduce) {
   .ds-abas-pilula,
+  .ds-nav-pilula,
   .ds-interruptor,
   .ds-interruptor > span,
   .ds-botao {
@@ -1895,6 +1956,153 @@ button[role="combobox"][aria-invalid="true"] {
     display: none;
   }
   .ds-dica[data-state="closed"] {
+    animation: none !important;
+  }
+}
+
+/* ---- Número que salta (Number pop-in) ----------------------------------
+   Para número que PRECISA ser notado quando muda — os contadores do menu
+   (fila, tarefas, casos). O dígito antigo sobe e sai; o novo nasce menor,
+   embaçado, passa um pouco do tamanho e assenta com mola. Os dois últimos
+   dígitos atrasam 1× e 2× o passo. Keyframes do transitions.dev, sem
+   alteração. Componente: components/ui/numero-salta.tsx. */
+.ds-salta {
+  --digit-dur: 600ms;
+  --digit-exit-dur: 155ms;
+  --digit-enter-delay: 50ms;
+  --digit-stagger: 40ms;
+  --digit-distance: 0.52em;
+  --digit-exit-distance: 0.52em;
+  --digit-blur: max(0.067em, 0.171em - 2.1px);
+  --digit-lift: 0.125em;
+  --digit-start-scale: 0.7;
+  --digit-peak: 1.03;
+  display: inline-flex;
+  align-items: baseline;
+  font-variant-numeric: tabular-nums;
+}
+.ds-salta-casa {
+  position: relative;
+  display: inline-block;
+}
+.ds-salta-velho {
+  position: absolute;
+  inset: 0;
+  text-align: center;
+  pointer-events: none;
+}
+.ds-salta-digito {
+  display: inline-block;
+}
+.ds-salta.anima .ds-salta-digito:not([data-igual]) {
+  animation: ds-digito-entra var(--digit-dur) linear both;
+  animation-delay: calc(var(--digit-stagger) * var(--digit-i, 0) + var(--digit-enter-delay));
+}
+.ds-salta.anima .ds-salta-velho {
+  animation: ds-digito-sai var(--digit-exit-dur) linear both;
+  animation-delay: calc(var(--digit-stagger) * var(--digit-i, 0));
+}
+@keyframes ds-digito-entra {
+  0% { transform: translateY(calc(var(--digit-distance) * 1 + var(--digit-lift) * 0)) scale(var(--digit-start-scale)); opacity: 0; filter: blur(calc(var(--digit-blur) * 1)); }
+  5% { transform: translateY(calc(var(--digit-distance) * 0.941 + var(--digit-lift) * 0.216)) scale(var(--digit-start-scale)); opacity: 0.059; filter: blur(calc(var(--digit-blur) * 1)); }
+  10% { transform: translateY(calc(var(--digit-distance) * 0.755 + var(--digit-lift) * 0.648)) scale(var(--digit-start-scale)); opacity: 0.245; filter: blur(calc(var(--digit-blur) * 1)); }
+  15% { transform: translateY(calc(var(--digit-distance) * 0.475 + var(--digit-lift) * 0.972)) scale(var(--digit-start-scale)); opacity: 0.525; filter: blur(calc(var(--digit-blur) * 1)); }
+  20% { transform: translateY(calc(var(--digit-distance) * 0.206 + var(--digit-lift) * 0.792)) scale(calc(1 + (var(--digit-start-scale) - 1) * 0.792)); opacity: 0.794; filter: blur(calc(var(--digit-blur) * 0.9)); }
+  25% { transform: translateY(calc(var(--digit-distance) * 0.041 + var(--digit-lift) * 0.392)) scale(calc(1 + (var(--digit-start-scale) - 1) * 0.392)); opacity: 0.959; filter: blur(calc(var(--digit-blur) * 0.75)); }
+  30% { transform: translateY(calc(var(--digit-distance) * 0 + var(--digit-lift) * 0.033)) scale(calc(1 + (var(--digit-start-scale) - 1) * 0.033)); opacity: 1; filter: blur(calc(var(--digit-blur) * 0.6)); }
+  35% { transform: translateY(calc(var(--digit-distance) * 0 + var(--digit-lift) * -0.194)) scale(calc(1 + (var(--digit-peak) - 1) * 0.711)); opacity: 1; filter: blur(calc(var(--digit-blur) * 0.45)); }
+  40% { transform: translateY(calc(var(--digit-distance) * 0 + var(--digit-lift) * -0.272)) scale(calc(1 + (var(--digit-peak) - 1) * 0.997)); opacity: 1; filter: blur(calc(var(--digit-blur) * 0.3)); }
+  45% { transform: translateY(calc(var(--digit-distance) * 0 + var(--digit-lift) * -0.238)) scale(calc(1 + (var(--digit-peak) - 1) * 0.87)); opacity: 1; filter: blur(calc(var(--digit-blur) * 0.15)); }
+  50% { transform: translateY(calc(var(--digit-distance) * 0 + var(--digit-lift) * -0.146)) scale(calc(1 + (var(--digit-peak) - 1) * 0.535)); opacity: 1; filter: blur(calc(var(--digit-blur) * 0)); }
+  55% { transform: translateY(calc(var(--digit-distance) * 0 + var(--digit-lift) * -0.05)) scale(calc(1 + (var(--digit-peak) - 1) * 0.183)); opacity: 1; filter: blur(calc(var(--digit-blur) * 0)); }
+  60% { transform: translateY(calc(var(--digit-distance) * 0 + var(--digit-lift) * 0.019)) scale(calc(1 + (var(--digit-peak) - 1) * -0.069)); opacity: 1; filter: blur(calc(var(--digit-blur) * 0)); }
+  65% { transform: translateY(calc(var(--digit-distance) * 0 + var(--digit-lift) * 0.05)) scale(calc(1 + (var(--digit-peak) - 1) * -0.185)); opacity: 1; filter: blur(calc(var(--digit-blur) * 0)); }
+  70% { transform: translateY(calc(var(--digit-distance) * 0 + var(--digit-lift) * 0.051)) scale(calc(1 + (var(--digit-peak) - 1) * -0.187)); opacity: 1; filter: blur(calc(var(--digit-blur) * 0)); }
+  75% { transform: translateY(calc(var(--digit-distance) * 0 + var(--digit-lift) * 0.035)) scale(calc(1 + (var(--digit-peak) - 1) * -0.128)); opacity: 1; filter: blur(calc(var(--digit-blur) * 0)); }
+  80% { transform: translateY(calc(var(--digit-distance) * 0 + var(--digit-lift) * 0.016)) scale(calc(1 + (var(--digit-peak) - 1) * -0.057)); opacity: 1; filter: blur(calc(var(--digit-blur) * 0)); }
+  85% { transform: translateY(calc(var(--digit-distance) * 0 + var(--digit-lift) * 0.002)) scale(calc(1 + (var(--digit-peak) - 1) * -0.007)); opacity: 1; filter: blur(calc(var(--digit-blur) * 0)); }
+  90% { transform: translateY(calc(var(--digit-distance) * 0 + var(--digit-lift) * -0.004)) scale(calc(1 + (var(--digit-peak) - 1) * 0.013)); opacity: 1; filter: blur(calc(var(--digit-blur) * 0)); }
+  95% { transform: translateY(calc(var(--digit-distance) * 0 + var(--digit-lift) * -0.003)) scale(calc(1 + (var(--digit-peak) - 1) * 0.011)); opacity: 1; filter: blur(calc(var(--digit-blur) * 0)); }
+  100% { transform: translateY(calc(var(--digit-distance) * 0 + var(--digit-lift) * 0)) scale(1); opacity: 1; filter: blur(calc(var(--digit-blur) * 0)); }
+}
+@keyframes ds-digito-sai {
+  0% { transform: translateY(calc(var(--digit-exit-distance) * 0)) scale(calc(1 + (var(--digit-start-scale) - 1) * 0)); opacity: 1; filter: blur(calc(var(--digit-blur) * 0)); }
+  10% { transform: translateY(calc(var(--digit-exit-distance) * -0.009)) scale(calc(1 + (var(--digit-start-scale) - 1) * 0.009)); opacity: 1; filter: blur(calc(var(--digit-blur) * 0.009)); }
+  20% { transform: translateY(calc(var(--digit-exit-distance) * -0.042)) scale(calc(1 + (var(--digit-start-scale) - 1) * 0.042)); opacity: 1; filter: blur(calc(var(--digit-blur) * 0.042)); }
+  30% { transform: translateY(calc(var(--digit-exit-distance) * -0.112)) scale(calc(1 + (var(--digit-start-scale) - 1) * 0.112)); opacity: 1; filter: blur(calc(var(--digit-blur) * 0.112)); }
+  40% { transform: translateY(calc(var(--digit-exit-distance) * -0.252)) scale(calc(1 + (var(--digit-start-scale) - 1) * 0.252)); opacity: 1; filter: blur(calc(var(--digit-blur) * 0.252)); }
+  50% { transform: translateY(calc(var(--digit-exit-distance) * -0.5)) scale(calc(1 + (var(--digit-start-scale) - 1) * 0.5)); opacity: 0.833; filter: blur(calc(var(--digit-blur) * 0.5)); }
+  60% { transform: translateY(calc(var(--digit-exit-distance) * -0.748)) scale(calc(1 + (var(--digit-start-scale) - 1) * 0.748)); opacity: 0.42; filter: blur(calc(var(--digit-blur) * 0.748)); }
+  70% { transform: translateY(calc(var(--digit-exit-distance) * -0.888)) scale(calc(1 + (var(--digit-start-scale) - 1) * 0.888)); opacity: 0.187; filter: blur(calc(var(--digit-blur) * 0.888)); }
+  80% { transform: translateY(calc(var(--digit-exit-distance) * -0.958)) scale(calc(1 + (var(--digit-start-scale) - 1) * 0.958)); opacity: 0.069; filter: blur(calc(var(--digit-blur) * 0.958)); }
+  90% { transform: translateY(calc(var(--digit-exit-distance) * -0.991)) scale(calc(1 + (var(--digit-start-scale) - 1) * 0.991)); opacity: 0.015; filter: blur(calc(var(--digit-blur) * 0.991)); }
+  100% { transform: translateY(calc(var(--digit-exit-distance) * -1)) scale(calc(1 + (var(--digit-start-scale) - 1) * 1)); opacity: 0; filter: blur(calc(var(--digit-blur) * 1)); }
+}
+
+/* ---- Contador que gira (Spinning counter) ------------------------------
+   Para o número que é um ACONTECIMENTO: os números da Visão geral quando a
+   tela abre. Cada dígito é um tambor de 0 a 9 que roda até o alvo, com
+   desfoque enquanto passa, uma cascata de 90ms entre as colunas e uma mola
+   ao pousar (passa 3% e volta). Versão em CSS do tambor do transitions.dev:
+   a coluna é uma faixa 0–9 que desliza; a máscara apaga as pontas. Componente:
+   components/ui/contador-que-gira.tsx. */
+.ds-tambor {
+  display: inline-flex;
+  align-items: baseline;
+  font-variant-numeric: tabular-nums;
+}
+.ds-tambor-coluna {
+  position: relative;
+  display: inline-block;
+  height: 1.2em;
+  line-height: 1.2em;
+  overflow: hidden;
+  vertical-align: bottom;
+  mask-image: linear-gradient(to bottom, transparent 0, #000 22%, #000 78%, transparent 100%);
+}
+.ds-tambor-medida {
+  visibility: hidden;
+}
+.ds-tambor-faixa {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  translate: 0 calc(var(--alvo, 0) * -1.2em);
+  animation: ds-tambor-roda var(--duracao, 900ms) cubic-bezier(0.34, 1.12, 0.64, 1) both;
+  animation-delay: calc(var(--coluna, 0) * 90ms);
+}
+.ds-tambor-faixa > span {
+  height: 1.2em;
+}
+@keyframes ds-tambor-roda {
+  0% {
+    translate: 0 0;
+    filter: blur(0);
+  }
+  12% {
+    filter: blur(0.06em);
+  }
+  70% {
+    filter: blur(0.04em);
+  }
+  100% {
+    translate: 0 calc(var(--alvo, 0) * -1.2em);
+    filter: blur(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-salta .ds-salta-digito {
+    animation: none !important;
+  }
+  .ds-salta .ds-salta-velho {
+    display: none;
+  }
+  .ds-tambor-faixa {
     animation: none !important;
   }
 }

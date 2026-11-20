@@ -3,6 +3,7 @@
 import { useT } from "@/hooks/i18n/useT";
 import { useTasks } from "@/hooks/tasks/useTasks";
 import { tarefaEstaAberta } from "@/lib/tarefas/tipos";
+import { NumeroSalta } from "@/components/ui/numero-salta";
 import { cn } from "@/lib/utils";
 
 /**
@@ -52,7 +53,7 @@ export function ContadorDeTarefas({ compacto }: { compacto: boolean }) {
         compacto ? "absolute top-1 right-1 h-2 w-2" : "ml-auto px-1.5 py-0.5",
       )}
     >
-      {compacto ? null : emAberto}
+      {compacto ? null : <NumeroSalta valor={String(emAberto)} />}
     </span>
   );
 }

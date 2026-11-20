@@ -10,6 +10,8 @@
  */
 import { useState } from "react";
 
+import { ContadorQueGira } from "@/components/ui/contador-que-gira";
+
 import { cn } from "@/lib/utils";
 
 function paraNumero(texto: string): number {
@@ -20,13 +22,27 @@ function paraNumero(texto: string): number {
 
 const ehDigito = (c: string | undefined) => c !== undefined && c >= "0" && c <= "9";
 
-export function NumeroAnimado({ valor, className }: { valor: string; className?: string }) {
+/**
+ * `girarAoAbrir`: na primeira pintura o número roda nos tambores (Spinning
+ * counter) — é o momento orquestrado da tela. Daí em diante, cada mudança é a
+ * troca discreta só dos dígitos que mudaram.
+ */
+export function NumeroAnimado({
+  valor,
+  className,
+  girarAoAbrir = false,
+}: {
+  valor: string;
+  className?: string;
+  girarAoAbrir?: boolean;
+}) {
   const [estado, setEstado] = useState({ atual: valor, anterior: valor, rodada: 0 });
   if (estado.atual !== valor) {
     setEstado({ atual: valor, anterior: estado.atual, rodada: estado.rodada + 1 });
   }
 
   const { atual, anterior, rodada } = estado;
+  if (girarAoAbrir && rodada === 0) return <ContadorQueGira valor={atual} className={className} />;
   const dir = paraNumero(atual) >= paraNumero(anterior) ? 1 : -1;
   const deslocamento = anterior.length - atual.length;
 

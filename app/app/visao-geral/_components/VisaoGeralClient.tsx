@@ -7,7 +7,7 @@
  */
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, useTransition, type ReactNode } from "react";
+import { useEffect, useState, useTransition, type ReactNode } from "react";
 import {
   Area,
   AreaChart,
@@ -88,7 +88,7 @@ function Rosca({ dados, centro }: { dados: Array<{ nome: string; valor: number; 
         </PieChart>
       </ResponsiveContainer>
       <span className="absolute inset-0 flex items-center justify-center text-2xl font-semibold tracking-tight tabular-nums">
-        <NumeroAnimado valor={centro} />
+        <NumeroAnimado valor={centro} girarAoAbrir />
       </span>
     </div>
   );
@@ -100,6 +100,22 @@ export function VisaoGeralClient({ dados, de, ate }: { dados: VisaoGeral; de: st
   const router = useRouter();
   const pathname = usePathname();
   const [carregando, iniciar] = useTransition();
+
+  // A entrada em cascata só começa DEPOIS de a página hidratar e os gráficos
+  // se medirem. Rodando junto com o carregamento, o navegador estava ocupado
+  // montando a tela e a animação acabava sem ter sido vista — a "travadinha"
+  // ao atualizar a página. Dois quadros depois do efeito, a tela está livre.
+  const [entrou, setEntrou] = useState(false);
+  useEffect(() => {
+    let b = 0;
+    const a = requestAnimationFrame(() => {
+      b = requestAnimationFrame(() => setEntrou(true));
+    });
+    return () => {
+      cancelAnimationFrame(a);
+      cancelAnimationFrame(b);
+    };
+  }, []);
 
   const reais = (c: number) => (c / 100).toLocaleString(tag, { style: "currency", currency: "BRL" });
   const pct = (n: number) => `${n.toLocaleString(tag, { maximumFractionDigits: 2 })}%`;
@@ -158,11 +174,14 @@ export function VisaoGeralClient({ dados, de, ate }: { dados: VisaoGeral; de: st
   );
 
   return (
-    <div className={cn("flex flex-col gap-4 p-4 md:p-6", carregando && "opacity-60 transition-opacity")}>
+    <div
+      data-entrada={entrou ? "vai" : "espera"}
+      className={cn("flex flex-col gap-4 p-4 md:p-6", carregando && "opacity-60 transition-opacity")}
+    >
       <header className="flex flex-wrap items-center gap-3">
         <div className="mr-auto">
-          <h1 className="text-2xl font-semibold tracking-tight">{t("Visão geral")}</h1>
-          <p className="text-sm text-muted-foreground">{t("Oportunidades criadas no período, funil, tarefas, atendimento e vendas.")}</p>
+          <h1 className="ds-cascata text-2xl font-semibold tracking-tight">{t("Visão geral")}</h1>
+          <p className="ds-cascata text-sm text-muted-foreground" style={{ ["--i" as string]: 1 }}>{t("Oportunidades criadas no período, funil, tarefas, atendimento e vendas.")}</p>
         </div>
         <div className="flex flex-wrap items-center gap-1">
           {atalhos.map((a) => (
@@ -199,11 +218,11 @@ export function VisaoGeralClient({ dados, de, ate }: { dados: VisaoGeral; de: st
             key={k.r}
             href={k.href}
             className="ds-cascata group rounded-lg border border-border bg-card px-4 py-3 transition-[border-color,background-color] duration-200 hover:border-primary/50 hover:bg-surface-elevated"
-            style={{ ["--i" as string]: i }}
+            style={{ ["--i" as string]: i + 1 }}
           >
             <p className="text-xs text-muted-foreground transition-colors group-hover:text-foreground">{k.r}</p>
             <p className="mt-1.5 truncate text-[1.375rem] leading-none font-semibold tracking-tight">
-              <NumeroAnimado valor={k.v} />
+              <NumeroAnimado valor={k.v} girarAoAbrir />
             </p>
           </Link>
         ))}
