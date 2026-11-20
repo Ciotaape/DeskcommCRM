@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { VendaRapida } from "@/components/inbox/VendaRapida";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -380,6 +381,12 @@ export function ConversationHeader({
           <Badge variant="outline" className="h-4 shrink-0 px-1.5 text-[10px]">
             {t(STATUS_LABEL[status] ?? status)}
           </Badge>
+          {/* A situação do NEGÓCIO, ao lado da da conversa: "Aberto" desce o menu
+              e "Ganho" fecha a venda com valor, leva para Fechou e marca
+              "Comprou" nos grupos — sem abrir funil nem painel dos grupos. */}
+          {!conversation.is_group && c?.id && (
+            <VendaRapida contactId={c.id} telefone={c.phone_number ?? null} />
+          )}
           {/* Ao lado do estado, não escondido num painel: a pergunta "dá para
               escrever agora?" se faz ANTES de digitar, não depois de receber um
               `failed` com um código de cinco dígitos. */}

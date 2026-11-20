@@ -28,6 +28,7 @@ import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Tag, Receipt, Users, ArrowRight, CaretDoubleLeft, CaretDoubleRight, CalendarCheck } from "@/lib/ui/icons";
 import { apiClient } from "@/lib/api/client";
+import { EVENTO_NEGOCIO_MUDOU } from "@/components/inbox/VendaRapida";
 import { toast } from "sonner";
 import type { ConversationWithContact } from "@/hooks/inbox/useConversationsRealtime";
 import { activityLabel, actorLabel, actorShape } from "@/lib/leads/activity-vocabulary";
@@ -1139,6 +1140,17 @@ export function CRMSidePanel({
   // que falhou depois — e escrita que parece ter dado certo é o defeito que
   // esta tela inteira combate.
   const recarregar = useCallback(() => setTentativa((n) => n + 1), []);
+
+  // A venda fechada pelo cabeçalho da conversa (`VendaRapida`) muda o negócio
+  // desta pessoa por fora deste painel; ele recarrega pelo mesmo caminho.
+  useEffect(() => {
+    const ouvir = (e: Event) => {
+      const alvo = (e as CustomEvent<{ contactId?: string }>).detail?.contactId;
+      if (!alvo || alvo === contactId) setTentativa((n) => n + 1);
+    };
+    window.addEventListener(EVENTO_NEGOCIO_MUDOU, ouvir);
+    return () => window.removeEventListener(EVENTO_NEGOCIO_MUDOU, ouvir);
+  }, [contactId]);
 
   /**
    * A troca de funil recarrega pelo MESMO caminho do "Tentar de novo" — este

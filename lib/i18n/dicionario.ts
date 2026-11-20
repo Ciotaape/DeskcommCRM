@@ -21759,6 +21759,16 @@ export const DICIONARIO: Traducoes = {
   "Mensagem citada": { es: "Mensaje citado" },
   "Toque para carregar a original": { es: "Toque para cargar el original" },
   "A mensagem original não está mais na conversa.": { es: "El mensaje original ya no está en la conversación." },
+  "Digite o valor da venda.": { es: "Escribe el valor de la venta." },
+  "Não foi possível fechar a venda.": { es: "No se pudo cerrar la venta." },
+  "Venda registrada: negócio ganho e etiqueta Comprou nos grupos.": { es: "Venta registrada: negocio ganado y etiqueta Compró en los grupos." },
+  "Venda registrada, mas a etiqueta dos grupos não foi atualizada.": { es: "Venta registrada, pero la etiqueta de los grupos no se actualizó." },
+  "Situação do negócio": { es: "Situación del negocio" },
+  "Corrigir valor da venda": { es: "Corregir valor de la venta" },
+  "Ganho: registrar venda": { es: "Ganado: registrar venta" },
+  "Registrar venda": { es: "Registrar venta" },
+  "O negócio vai para Fechou, a venda entra na receita e a etiqueta nos grupos vira Comprou.": { es: "El negocio pasa a Cerrado, la venta entra en los ingresos y la etiqueta en los grupos pasa a Compró." },
+  "Valor da venda (R$)": { es: "Valor de la venta (R$)" },
 };
 
 /**
