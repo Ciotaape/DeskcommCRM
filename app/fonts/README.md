@@ -46,3 +46,10 @@ curl -sA "$UA" 'https://fonts.googleapis.com/css?family=Atkinson+Hyperlegible:40
 
 Todas as famílias são distribuídas sob a SIL Open Font License 1.1 — texto e
 avisos de copyright em [`OFL.txt`](OFL.txt).
+
+## Onest (fonte da interface)
+
+`onest-100-900-latin.woff2` — Onest variável 100–900, subconjunto latin (cobre o
+português inteiro). Origem: pacote npm `@fontsource-variable/onest@5.3.1`
+(`files/onest-latin-wght-normal.woff2`), sem alteração. Licença SIL OFL 1.1,
+© The Onest Project Authors (https://github.com/simpals/onest).

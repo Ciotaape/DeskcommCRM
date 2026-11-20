@@ -26,14 +26,18 @@ import {
 import { useTagDeIdioma } from "@/hooks/i18n/useLocaleDeData";
 import { useT } from "@/hooks/i18n/useT";
 import type { VisaoGeral } from "@/lib/visao-geral/servico";
+import { NumeroAnimado } from "@/components/ui/numero-animado";
 import { cn } from "@/lib/utils";
 
 const PALETA = ["#3B82F6", "#22D3EE", "#818CF8", "#A78BFA", "#2563EB", "#67E8F9", "#38BDF8", "#93C5FD", "#60A5FA", "#F472B6", "#FB7185", "#34D399"];
 const COR_STATUS = { aberto: "#3B82F6", ganho: "#22D3EE", perdido: "#818CF8" } as const;
 
-function Cartao({ titulo, sub, acao, children, className }: { titulo: string; sub?: string; acao?: ReactNode; children: ReactNode; className?: string }) {
+function Cartao({ titulo, sub, acao, children, className, ordem = 8 }: { titulo: string; sub?: string; acao?: ReactNode; children: ReactNode; className?: string; ordem?: number }) {
   return (
-    <section className={cn("flex min-w-0 flex-col rounded-lg border border-border bg-card", className)}>
+    <section
+      className={cn("ds-cascata flex min-w-0 flex-col rounded-lg border border-border bg-card", className)}
+      style={{ ["--i" as string]: ordem }}
+    >
       <header className="flex items-start justify-between gap-2 border-b border-border px-4 py-3">
         <div className="min-w-0">
           <h2 className="truncate text-sm font-semibold">{titulo}</h2>
@@ -83,7 +87,9 @@ function Rosca({ dados, centro }: { dados: Array<{ nome: string; valor: number; 
           {!vazio && <Tooltip formatter={(v) => String(v)} />}
         </PieChart>
       </ResponsiveContainer>
-      <span className="absolute inset-0 flex items-center justify-center text-2xl font-semibold tabular-nums">{centro}</span>
+      <span className="absolute inset-0 flex items-center justify-center text-2xl font-semibold tracking-tight tabular-nums">
+        <NumeroAnimado valor={centro} />
+      </span>
     </div>
   );
 }
@@ -188,16 +194,23 @@ export function VisaoGeralClient({ dados, de, ate }: { dados: VisaoGeral; de: st
           { r: t("Conversas abertas"), v: String(dados.atendimento.privadoAbertas), href: "/app/inbox" },
           { r: t("Aguardando resposta"), v: String(dados.atendimento.aguardandoResposta), href: "/app/inbox" },
           { r: t("Vendas Kiwify"), v: `${dados.vendasExternas.quantidade} · ${reais(dados.vendasExternas.valor_cents)}`, href: "/app/grupos?aba=painel" },
-        ].map((k) => (
-          <Link key={k.r} href={k.href} className="rounded-lg border border-border bg-card px-4 py-3 transition-colors hover:border-primary/60">
-            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{k.r}</p>
-            <p className="mt-1 truncate text-xl font-semibold tabular-nums">{k.v}</p>
+        ].map((k, i) => (
+          <Link
+            key={k.r}
+            href={k.href}
+            className="ds-cascata group rounded-lg border border-border bg-card px-4 py-3 transition-[border-color,background-color] duration-200 hover:border-primary/50 hover:bg-surface-elevated"
+            style={{ ["--i" as string]: i }}
+          >
+            <p className="text-xs text-muted-foreground transition-colors group-hover:text-foreground">{k.r}</p>
+            <p className="mt-1.5 truncate text-[1.375rem] leading-none font-semibold tracking-tight">
+              <NumeroAnimado valor={k.v} />
+            </p>
           </Link>
         ))}
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <Cartao titulo={t("Status das oportunidades")} sub={t("Criadas no período")}>
+        <Cartao titulo={t("Status das oportunidades")} sub={t("Criadas no período")} ordem={3}>
           <div className="flex items-center gap-6">
             <Rosca dados={statusRosca} centro={String(dados.total)} />
             <div className="min-w-0 flex-1">
@@ -206,7 +219,7 @@ export function VisaoGeralClient({ dados, de, ate }: { dados: VisaoGeral; de: st
           </div>
         </Cartao>
 
-        <Cartao titulo={t("Valor das oportunidades")} sub={t("Soma do valor por status")}>
+        <Cartao titulo={t("Valor das oportunidades")} sub={t("Soma do valor por status")} ordem={4}>
           <div className="h-36">
             <ResponsiveContainer>
               <BarChart data={valorBarras} layout="vertical" margin={{ left: 8, right: 16 }}>
@@ -223,10 +236,12 @@ export function VisaoGeralClient({ dados, de, ate }: { dados: VisaoGeral; de: st
             </ResponsiveContainer>
           </div>
           <p className="mt-2 text-center text-xs text-muted-foreground">{t("Receita total")}</p>
-          <p className="text-center text-lg font-semibold tabular-nums">{reais(receitaTotal)}</p>
+          <p className="text-center text-lg font-semibold tabular-nums">
+            <NumeroAnimado valor={reais(receitaTotal)} />
+          </p>
         </Cartao>
 
-        <Cartao titulo={t("Taxa de conversão")} sub={t("Ganhas ÷ criadas no período")}>
+        <Cartao titulo={t("Taxa de conversão")} sub={t("Ganhas ÷ criadas no período")} ordem={5}>
           <div className="flex flex-col items-center">
             <Rosca
               dados={[
@@ -236,13 +251,15 @@ export function VisaoGeralClient({ dados, de, ate }: { dados: VisaoGeral; de: st
               centro={pct(dados.conversao_pct)}
             />
             <p className="mt-2 text-xs text-muted-foreground">{t("Receita ganha")}</p>
-            <p className="text-lg font-semibold tabular-nums">{reais(s.ganho.valor_cents)}</p>
+            <p className="text-lg font-semibold tabular-nums">
+              <NumeroAnimado valor={reais(s.ganho.valor_cents)} />
+            </p>
           </div>
         </Cartao>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Cartao titulo={t("Funil")} sub={t("Onde estão as oportunidades criadas no período")}>
+        <Cartao titulo={t("Funil")} sub={t("Onde estão as oportunidades criadas no período")} ordem={6}>
           {dados.funil.length === 0 ? (
             <p className="py-10 text-center text-sm text-muted-foreground">{t("Nenhum funil configurado.")}</p>
           ) : (
@@ -269,7 +286,7 @@ export function VisaoGeralClient({ dados, de, ate }: { dados: VisaoGeral; de: st
           )}
         </Cartao>
 
-        <Cartao titulo={t("Distribuição por etapas")} sub={t("Quantidade e valor em cada etapa")}>
+        <Cartao titulo={t("Distribuição por etapas")} sub={t("Quantidade e valor em cada etapa")} ordem={7}>
           <div className="flex flex-col items-center gap-4 sm:flex-row">
             <Rosca
               dados={dados.funil.map((e, i) => ({ nome: e.nome, valor: e.quantidade, cor: etapasCor[i] ?? "#3B82F6" }))}
@@ -288,7 +305,7 @@ export function VisaoGeralClient({ dados, de, ate }: { dados: VisaoGeral; de: st
         </Cartao>
       </div>
 
-      <Cartao titulo={t("Oportunidades por dia")} sub={t("Criadas e ganhas em cada dia do período")}>
+      <Cartao titulo={t("Oportunidades por dia")} sub={t("Criadas e ganhas em cada dia do período")} ordem={8}>
         <div className="h-48">
           <ResponsiveContainer>
             <AreaChart data={dados.serieDiaria.map((d) => ({ ...d, rotulo: d.dia.slice(8, 10) + "/" + d.dia.slice(5, 7) }))}>
@@ -342,7 +359,7 @@ export function VisaoGeralClient({ dados, de, ate }: { dados: VisaoGeral; de: st
               { r: t("Grupos"), v: dados.atendimento.grupos },
             ].map((k) => (
               <div key={k.r}>
-                <p className="text-2xl font-semibold tabular-nums">{k.v}</p>
+                <p className="text-2xl font-semibold tracking-tight tabular-nums"><NumeroAnimado valor={String(k.v)} /></p>
                 <p className="text-[11px] text-muted-foreground">{k.r}</p>
               </div>
             ))}

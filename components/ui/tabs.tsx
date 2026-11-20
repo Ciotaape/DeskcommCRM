@@ -7,43 +7,90 @@ import { cn } from "@/lib/utils";
 
 const Tabs = TabsPrimitive.Root;
 
+/**
+ * A pílula deslizante do transitions.dev ("Tabs sliding"): um único elemento
+ * que anda até a aba ativa (translate + width em 250ms) em vez de cada aba
+ * acender o próprio fundo. A lista mede a aba ativa e escreve a posição em
+ * custom properties; o CSS (`.ds-abas` em app/globals.css) faz o resto.
+ *
+ * Primeira medição e redimensionamento vão SEM transição (`data-pilula=
+ * "sem-transicao"`), para a pílula nascer no lugar em vez de deslizar do canto.
+ */
+function usePilula(lista: React.RefObject<HTMLDivElement | null>) {
+  React.useLayoutEffect(() => {
+    const el = lista.current;
+    if (!el) return;
+    let primeira = true;
+    let quadro = 0;
+
+    const medir = (semTransicao: boolean) => {
+      const ativa = el.querySelector<HTMLElement>('[role="tab"][data-state="active"]');
+      if (!ativa) {
+        el.removeAttribute("data-pilula");
+        return;
+      }
+      const caixa = el.getBoundingClientRect();
+      const aba = ativa.getBoundingClientRect();
+      if (aba.width === 0) return;
+      el.style.setProperty("--pilula-x", `${aba.left - caixa.left + el.scrollLeft - el.clientLeft}px`);
+      el.style.setProperty("--pilula-y", `${aba.top - caixa.top + el.scrollTop - el.clientTop}px`);
+      el.style.setProperty("--pilula-w", `${aba.width}px`);
+      el.style.setProperty("--pilula-h", `${aba.height}px`);
+      if (semTransicao) {
+        el.setAttribute("data-pilula", "sem-transicao");
+        cancelAnimationFrame(quadro);
+        quadro = requestAnimationFrame(() => {
+          quadro = requestAnimationFrame(() => el.setAttribute("data-pilula", "ativa"));
+        });
+      } else {
+        el.setAttribute("data-pilula", "ativa");
+      }
+    };
+
+    medir(true);
+    primeira = false;
+
+    const mutacoes = new MutationObserver(() => medir(primeira));
+    mutacoes.observe(el, { subtree: true, attributes: true, attributeFilter: ["data-state"], childList: true });
+    const tamanho = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(() => medir(true));
+    tamanho?.observe(el);
+
+    return () => {
+      cancelAnimationFrame(quadro);
+      mutacoes.disconnect();
+      tamanho?.disconnect();
+    };
+  }, [lista]);
+}
+
 const TabsList = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.List>,
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>
->(({ className, ...props }, ref) => (
-  <TabsPrimitive.List
-    ref={ref}
-    className={cn(
-      // `max-w-full overflow-x-auto` porque uma fila de abas cresce com o
-      // produto e nunca encolhe: no detalhe do agente são SEIS, e em 390px de
-      // largura a fila mede 814px — a página inteira passava a rolar na
-      // horizontal, que é o pior jeito de uma tela quebrar (o conteúdo some
-      // para o lado e nada indica que existe). Medido antes/depois com
-      // `documentElement.scrollWidth - clientWidth`.
-      //
-      // Aqui e não na tela do agente de propósito: TODA `TabsList` do app tem a
-      // mesma fragilidade, e consertar só onde eu esbarrei deixaria as irmãs
-      // quebradas com um álibi de "já foi tratado".
-      //
-      // `max-lg:h-auto`: abaixo de `lg` a aba tem 44 px (ver `TabsTrigger`), e
-      // `overflow-x-auto` obriga o `overflow-y` a rolar também — com `h-9` a
-      // fila CORTAVA a aba de cima e de baixo, e o toque na borda dela caía
-      // fora. Não é `h-auto lg:h-9`: quem já passa `h-auto` (Conexões, Inbox)
-      // perderia o `h-auto` no computador, porque o `tailwind-merge` derruba o
-      // da base e deixa o `lg:h-9` de pé.
-      //
-      // `justify-center-safe` e não `justify-center`: centralizar uma fila que
-      // TRANSBORDA empurra metade do excesso para a esquerda, onde a rolagem não
-      // chega (`scrollLeft` não fica negativo). Medido a 375 px no detalhe do
-      // agente: a primeira aba, "Configuração", ficava em left = -80 px, e quem
-      // ia ao Histórico no celular não tinha como voltar. `safe` centraliza
-      // quando cabe e começa pela primeira quando não cabe.
-      "inline-flex h-9 max-w-full items-center max-lg:h-auto justify-center-safe overflow-x-auto rounded-lg bg-muted p-1 text-muted-foreground",
-      className,
-    )}
-    {...props}
-  />
-));
+>(({ className, children, ...props }, ref) => {
+  const interno = React.useRef<HTMLDivElement | null>(null);
+  const juntar = React.useCallback(
+    (no: HTMLDivElement | null) => {
+      interno.current = no;
+      if (typeof ref === "function") ref(no);
+      else if (ref) ref.current = no;
+    },
+    [ref],
+  );
+  usePilula(interno);
+  return (
+    <TabsPrimitive.List
+      ref={juntar}
+      className={cn(
+        "ds-abas inline-flex h-9 max-w-full items-center max-lg:h-auto justify-center-safe overflow-x-auto rounded-lg bg-muted p-1 text-muted-foreground",
+        className,
+      )}
+      {...props}
+    >
+      <span aria-hidden="true" className="ds-abas-pilula" />
+      {children}
+    </TabsPrimitive.List>
+  );
+});
 TabsList.displayName = TabsPrimitive.List.displayName;
 
 const TabsTrigger = React.forwardRef<
@@ -70,7 +117,7 @@ const TabsTrigger = React.forwardRef<
       //
       // `lg:` é o mesmo corte que `components/ui/button.tsx` usa para separar
       // "quem aciona é dedo" de "quem aciona é cursor".
-      "inline-flex min-h-11 items-center justify-center rounded-md px-3 py-1 text-sm font-medium whitespace-nowrap ring-offset-background transition-[background-color,color,box-shadow] duration-fast focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm lg:min-h-0",
+      "inline-flex min-h-11 items-center justify-center rounded-md px-3 py-1 text-sm font-medium whitespace-nowrap ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm lg:min-h-0",
       className,
     )}
     {...props}
@@ -85,7 +132,7 @@ const TabsContent = React.forwardRef<
   <TabsPrimitive.Content
     ref={ref}
     className={cn(
-      "mt-2 ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-hidden",
+      "ds-aba-conteudo mt-2 ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-hidden",
       className,
     )}
     {...props}

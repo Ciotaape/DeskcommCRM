@@ -15,7 +15,7 @@
  * (jsdom + testing-library, com os mesmos dublês do
  * `inbox-filters-scope.test.tsx`) injetado numa página, e o CSS que o Tailwind
  * compila de `app/globals.css` — mais a fonte real
- * (`app/fonts/atkinson-hyperlegible-400-*.woff2`), porque largura de rótulo é
+ * (`app/fonts/onest-100-900-latin.woff2`), porque largura de rótulo é
  * largura de fonte e a fonte substituta muda o número. O que NÃO é real é a
  * coluna ao redor: ela é uma `div` de largura fixa, não o grid do Inbox — o
  * número que importa (a coluna da lista, 240–520px) é o mesmo, e a issue mediu
@@ -97,7 +97,7 @@ async function compilarCssDoProduto(): Promise<string> {
 
 /** A fonte real, em data URL — sem ela a largura do rótulo é a do fallback. */
 function fonteRealEmBase64(): string {
-  const woff2 = "app/fonts/atkinson-hyperlegible-400-latin-latin-ext.woff2";
+  const woff2 = "app/fonts/onest-100-900-latin.woff2";
   return `@font-face{font-family:"AtkinsonSonda";src:url(data:font/woff2;base64,${readFileSync(woff2).toString("base64")}) format("woff2");}`;
 }
 
@@ -127,7 +127,7 @@ describe("sonda — as 6 abas da Inbox medidas em browser", () => {
         const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
         await page.setContent(
           `<!doctype html><html><head><meta charset="utf-8"><style>${fonteRealEmBase64()}</style>` +
-            `<style>:root{--font-atkinson:"AtkinsonSonda"}</style><style>${css}</style></head>` +
+            `<style>:root{--font-ui:"AtkinsonSonda"}</style><style>${css}</style></head>` +
             `<body style="margin:0"><div id="coluna" style="width:272px">${html}</div></body></html>`,
         );
         for (const larguraDaColuna of COLUNAS) {

@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
  */
 const buttonVariants = cva(
   [
-    "inline-flex items-center justify-center gap-2 whitespace-nowrap",
+    "ds-botao inline-flex items-center justify-center gap-2 whitespace-nowrap",
     "rounded-sm font-medium",
     // `transform` SAIU da lista, e `translate` não entrou no lugar.
     //
@@ -31,12 +31,9 @@ const buttonVariants = cva(
     // em vez de clicado. A lei pede 80ms, que nem existe na tabela de durações
     // dela própria; transicionar em `duration-fast` (120ms) deixaria a descida
     // E a subida arrastadas, que é o oposto do que o recuo comunica.
-    "transition-[background-color,border-color,color,box-shadow]",
-    "duration-fast ease-out",
     "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2 focus-visible:ring-offset-bg",
     "disabled:pointer-events-none disabled:opacity-50",
     "[&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
-    "active:translate-y-px",
   ].join(" "),
   {
     variants: {

@@ -32,19 +32,19 @@
 
 :root {
   /* Surfaces (light) */
-  --color-bg: #faf9f6;
+  --color-bg: #f4f6fa;
   --color-surface: #ffffff;
-  --color-surface-elevated: #f5f3ee;
-  --color-overlay: rgba(28, 26, 22, 0.42);
+  --color-surface-elevated: #eef1f6;
+  --color-overlay: rgba(12, 18, 32, 0.42);
 
   /* Text (light) */
-  --color-text: #1c1a16;
-  --color-text-muted: #5d594f;
-  --color-text-subtle: #7d786c;
+  --color-text: #121826;
+  --color-text-muted: #4d5668;
+  --color-text-subtle: #687185;
 
   /* Borders (light) */
-  --color-border: #e7e3da;
-  --color-border-strong: #d2cdbf;
+  --color-border: #e1e5ec;
+  --color-border-strong: #cbd2dd;
 
   /* ---- Identidade de canal (#4094) -------------------------------------
    * A cor da faixa/ícone que marca DE ONDE veio a mensagem (aviso da esquina
@@ -76,17 +76,17 @@
   --color-accent-hover: var(--color-accent-700);
 
   /* Neutrals — greige (11 stops, light) */
-  --color-neutral-50: #faf9f6;
-  --color-neutral-100: #f3f1ec;
-  --color-neutral-200: #e7e3da;
-  --color-neutral-300: #d2cdbf;
-  --color-neutral-400: #a9a395;
-  --color-neutral-500: #7d786c;
-  --color-neutral-600: #5d594f;
-  --color-neutral-700: #46433b;
-  --color-neutral-800: #2e2c26;
-  --color-neutral-900: #1c1a16;
-  --color-neutral-950: #0e0d0a;
+  --color-neutral-50: #f6f8fb;
+  --color-neutral-100: #eef1f6;
+  --color-neutral-200: #e1e5ec;
+  --color-neutral-300: #cbd2dd;
+  --color-neutral-400: #9aa3b2;
+  --color-neutral-500: #687185;
+  --color-neutral-600: #4d5668;
+  --color-neutral-700: #374051;
+  --color-neutral-800: #232a38;
+  --color-neutral-900: #121826;
+  --color-neutral-950: #090d16;
 
   /* States (light) */
   --color-success: #5a8a5f;
@@ -127,11 +127,11 @@
   --radius-full: 9999px;
 
   /* Shadows — desaturated, neutral-based */
-  --shadow-xs: 0 1px 2px 0 rgba(20, 18, 14, 0.04);
-  --shadow-sm: 0 1px 2px 0 rgba(20, 18, 14, 0.05), 0 1px 1px 0 rgba(20, 18, 14, 0.03);
-  --shadow-md: 0 4px 12px -2px rgba(20, 18, 14, 0.06), 0 2px 4px -1px rgba(20, 18, 14, 0.04);
-  --shadow-lg: 0 12px 32px -6px rgba(20, 18, 14, 0.1), 0 4px 12px -2px rgba(20, 18, 14, 0.06);
-  --shadow-xl: 0 24px 48px -12px rgba(20, 18, 14, 0.16), 0 8px 16px -4px rgba(20, 18, 14, 0.08);
+  --shadow-xs: 0 1px 2px 0 rgba(16, 24, 40, 0.04);
+  --shadow-sm: 0 1px 2px 0 rgba(16, 24, 40, 0.05), 0 1px 1px 0 rgba(16, 24, 40, 0.03);
+  --shadow-md: 0 4px 12px -2px rgba(16, 24, 40, 0.06), 0 2px 4px -1px rgba(16, 24, 40, 0.04);
+  --shadow-lg: 0 12px 32px -6px rgba(16, 24, 40, 0.1), 0 4px 12px -2px rgba(16, 24, 40, 0.06);
+  --shadow-xl: 0 24px 48px -12px rgba(16, 24, 40, 0.16), 0 8px 16px -4px rgba(16, 24, 40, 0.08);
 
   /* Density — Aerada */
   --density-row: 56px;
@@ -159,6 +159,21 @@
   --duration-base: 200ms;
   --duration-slow: 320ms;
   --duration-spring: 420ms;
+
+  /* Motion — escala do transitions.dev (https://transitions.dev, licença de uso
+     livre). Abrir é convite, fechar sai do caminho: as aberturas usam `--t-open`
+     e os fechamentos `--t-close`, sempre mais curtos. Uma curva só para tudo que
+     é superfície (`--t-ease`); a mola fica restrita a entradas pequenas. */
+  --t-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --t-ease-mola: cubic-bezier(0.34, 1.36, 0.64, 1);
+  --t-ease-toggle: cubic-bezier(0.34, 1.35, 0.64, 1);
+  --t-stagger: 40ms;
+  --t-micro: 80ms;
+  --t-close: 150ms;
+  --t-open: 250ms;
+  --t-panel-close: 350ms;
+  --t-panel-open: 400ms;
+  --t-reveal: 500ms;
 
   /* Z-index */
   --z-base: 0;
@@ -275,15 +290,15 @@
    (lib/branding/css.ts), que só ganha consumidor com a tela de marca.
    ───────────────────────────────────────────────────────────────────────── */
 [data-theme="light"] {
-  --color-bg: #faf9f6;
+  --color-bg: #f4f6fa;
   --color-surface: #ffffff;
-  --color-surface-elevated: #f5f3ee;
-  --color-overlay: rgba(28, 26, 22, 0.42);
-  --color-text: #1c1a16;
-  --color-text-muted: #5d594f;
-  --color-text-subtle: #7d786c;
-  --color-border: #e7e3da;
-  --color-border-strong: #d2cdbf;
+  --color-surface-elevated: #eef1f6;
+  --color-overlay: rgba(12, 18, 32, 0.42);
+  --color-text: #121826;
+  --color-text-muted: #4d5668;
+  --color-text-subtle: #687185;
+  --color-border: #e1e5ec;
+  --color-border-strong: #cbd2dd;
 
   /* ---- Identidade de canal (#4094) -------------------------------------
    * A cor da faixa/ícone que marca DE ONDE veio a mensagem (aviso da esquina
@@ -300,17 +315,17 @@
   --color-accent-fg: #ffffff;
   --color-accent-soft: var(--color-accent-100);
   --color-accent-hover: var(--color-accent-700);
-  --color-neutral-50: #faf9f6;
-  --color-neutral-100: #f3f1ec;
-  --color-neutral-200: #e7e3da;
-  --color-neutral-300: #d2cdbf;
-  --color-neutral-400: #a9a395;
-  --color-neutral-500: #7d786c;
-  --color-neutral-600: #5d594f;
-  --color-neutral-700: #46433b;
-  --color-neutral-800: #2e2c26;
-  --color-neutral-900: #1c1a16;
-  --color-neutral-950: #0e0d0a;
+  --color-neutral-50: #f6f8fb;
+  --color-neutral-100: #eef1f6;
+  --color-neutral-200: #e1e5ec;
+  --color-neutral-300: #cbd2dd;
+  --color-neutral-400: #9aa3b2;
+  --color-neutral-500: #687185;
+  --color-neutral-600: #4d5668;
+  --color-neutral-700: #374051;
+  --color-neutral-800: #232a38;
+  --color-neutral-900: #121826;
+  --color-neutral-950: #090d16;
   --color-success: #5a8a5f;
   --color-success-bg: rgba(90, 138, 95, 0.12);
   --color-success-fg: #41673f;
@@ -323,11 +338,11 @@
   --color-info: #4a7a93;
   --color-info-bg: rgba(74, 122, 147, 0.12);
   --color-info-fg: #355d72;
-  --shadow-xs: 0 1px 2px 0 rgba(20, 18, 14, 0.04);
-  --shadow-sm: 0 1px 2px 0 rgba(20, 18, 14, 0.05), 0 1px 1px 0 rgba(20, 18, 14, 0.03);
-  --shadow-md: 0 4px 12px -2px rgba(20, 18, 14, 0.06), 0 2px 4px -1px rgba(20, 18, 14, 0.04);
-  --shadow-lg: 0 12px 32px -6px rgba(20, 18, 14, 0.1), 0 4px 12px -2px rgba(20, 18, 14, 0.06);
-  --shadow-xl: 0 24px 48px -12px rgba(20, 18, 14, 0.16), 0 8px 16px -4px rgba(20, 18, 14, 0.08);
+  --shadow-xs: 0 1px 2px 0 rgba(16, 24, 40, 0.04);
+  --shadow-sm: 0 1px 2px 0 rgba(16, 24, 40, 0.05), 0 1px 1px 0 rgba(16, 24, 40, 0.03);
+  --shadow-md: 0 4px 12px -2px rgba(16, 24, 40, 0.06), 0 2px 4px -1px rgba(16, 24, 40, 0.04);
+  --shadow-lg: 0 12px 32px -6px rgba(16, 24, 40, 0.1), 0 4px 12px -2px rgba(16, 24, 40, 0.06);
+  --shadow-xl: 0 24px 48px -12px rgba(16, 24, 40, 0.16), 0 8px 16px -4px rgba(16, 24, 40, 0.08);
   --background: var(--color-bg);
   --foreground: var(--color-text);
   --card: var(--color-surface);
@@ -365,19 +380,19 @@
 
 [data-theme="dark"] {
   /* Surfaces (dark — drawn) */
-  --color-bg: #161510;
-  --color-surface: #1d1c17;
-  --color-surface-elevated: #272620;
-  --color-overlay: rgba(0, 0, 0, 0.55);
+  --color-bg: #0e131c;
+  --color-surface: #141a25;
+  --color-surface-elevated: #1b2230;
+  --color-overlay: rgba(3, 6, 12, 0.6);
 
   /* Text (dark) */
-  --color-text: #f5f4ef;
-  --color-text-muted: #8e8b7f;
-  --color-text-subtle: #605e54;
+  --color-text: #eef1f6;
+  --color-text-muted: #96a0b2;
+  --color-text-subtle: #6c768a;
 
   /* Borders (dark) */
-  --color-border: #33312a;
-  --color-border-strong: #444239;
+  --color-border: #242c3b;
+  --color-border-strong: #333d4f;
 
   /* ---- Identidade de canal (#4094) -------------------------------------
    * A cor da faixa/ícone que marca DE ONDE veio a mensagem (aviso da esquina
@@ -404,22 +419,22 @@
   --color-accent-900: #2f3c2b;
   --color-accent-950: #171f15;
   --color-accent: var(--color-accent-400);
-  --color-accent-fg: #161510;
+  --color-accent-fg: #0e131c;
   --color-accent-soft: rgba(130, 160, 119, 0.16);
   --color-accent-hover: var(--color-accent-300);
 
   /* Neutrals — greige (11 stops, dark) */
-  --color-neutral-50: #f5f4ef;
-  --color-neutral-100: #e6e4dc;
-  --color-neutral-200: #bbb8ac;
-  --color-neutral-300: #8e8b7f;
-  --color-neutral-400: #605e54;
-  --color-neutral-500: #444239;
-  --color-neutral-600: #33312a;
-  --color-neutral-700: #272620;
-  --color-neutral-800: #1d1c17;
-  --color-neutral-900: #161510;
-  --color-neutral-950: #0c0b08;
+  --color-neutral-50: #eef1f6;
+  --color-neutral-100: #dde2ea;
+  --color-neutral-200: #b4bccb;
+  --color-neutral-300: #96a0b2;
+  --color-neutral-400: #6c768a;
+  --color-neutral-500: #4a5366;
+  --color-neutral-600: #333d4f;
+  --color-neutral-700: #242c3b;
+  --color-neutral-800: #1b2230;
+  --color-neutral-900: #0e131c;
+  --color-neutral-950: #080b11;
 
   /* States (dark) */
   --color-success: #82a077;
@@ -582,7 +597,7 @@
 
   /* Tipografia */
   --font-sans:
-    var(--font-atkinson), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    var(--font-ui), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
   /* Espaçamento. Os valores são px LITERAIS (`--space-6` = 24px), não rem — e
@@ -819,7 +834,7 @@
     background-color: var(--color-bg);
     color: var(--color-text);
     font-family:
-      var(--font-atkinson),
+      var(--font-ui),
       ui-sans-serif,
       system-ui,
       -apple-system,
@@ -830,8 +845,7 @@
       sans-serif;
     font-feature-settings:
       "rlig" 1,
-      "calt" 1,
-      "ss01" 1;
+      "calt" 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
@@ -1175,11 +1189,16 @@
   }
 }
 
+.ds-cortina {
+  background-color: var(--color-overlay) !important;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
 .ds-cortina[data-state="open"] {
-  animation: ds-cortina-entra var(--duration-base) var(--ease-in-out) both;
+  animation: ds-cortina-entra var(--t-open) var(--t-ease) both;
 }
 .ds-cortina[data-state="closed"] {
-  animation: ds-cortina-sai var(--duration-base) var(--ease-in-out) both;
+  animation: ds-cortina-sai var(--t-close) var(--t-ease) both;
 }
 
 /* ---- A gaveta (Sheet), por lado ----------------------------------------
@@ -1256,10 +1275,10 @@
    8ms o nó pinta no estado FINAL (já aberto, no lugar) e só então salta para o
    começo — um quadro de gaveta inteira piscando antes de a animação começar. */
 .ds-gaveta[data-state="open"] {
-  animation: ds-gaveta-entra var(--duration-slow) var(--ease-out-slow) 8ms both;
+  animation: ds-gaveta-entra var(--t-panel-open) var(--t-ease) 8ms both;
 }
 .ds-gaveta[data-state="closed"] {
-  animation: ds-gaveta-sai var(--duration-slow) var(--ease-out-slow) both;
+  animation: ds-gaveta-sai var(--t-panel-close) var(--t-ease) both;
 }
 
 /* ---- O modal (Dialog e AlertDialog) ------------------------------------
@@ -1305,8 +1324,8 @@
 @keyframes ds-modal-entra {
   from {
     opacity: 0;
-    translate: var(--ds-modal-x, -50%) calc(var(--ds-modal-y, -50%) + 8px);
-    scale: 0.985;
+    translate: var(--ds-modal-x, -50%) var(--ds-modal-y, -50%);
+    scale: 0.96;
   }
   to {
     opacity: 1;
@@ -1322,16 +1341,16 @@
   }
   to {
     opacity: 0;
-    translate: var(--ds-modal-x, -50%) calc(var(--ds-modal-y, -50%) + 8px);
-    scale: 0.985;
+    translate: var(--ds-modal-x, -50%) var(--ds-modal-y, -50%);
+    scale: 0.96;
   }
 }
 
 .ds-modal[data-state="open"] {
-  animation: ds-modal-entra var(--duration-slow) var(--ease-out-slow) 8ms both;
+  animation: ds-modal-entra var(--t-open) var(--t-ease) 8ms both;
 }
 .ds-modal[data-state="closed"] {
-  animation: ds-modal-sai var(--duration-slow) var(--ease-out-slow) both;
+  animation: ds-modal-sai var(--t-close) var(--t-ease) both;
 }
 
 /* ---- Painéis presos a um gatilho (menu, seletor, popover, dica) --------
@@ -1342,24 +1361,30 @@
    Sem o -50% de centralização aqui: quem posiciona estes painéis é o Radix, na
    camada de cima (`[data-radix-popper-content-wrapper]`), então o deslocamento
    deste nó é só o nosso. E `translate` individual, pelo mesmo motivo do modal. */
+/* Menu dropdown do transitions.dev: cresce DO GATILHO (`transform-origin` vem
+   do Radix pela classe `origin-(--radix-…-transform-origin)`), de 0.97 a 1 em
+   250ms; fecha mais curto e quieto, só até 0.99, em 150ms. Os 4px de
+   deslocamento na direção do gatilho ficam para manter a continuidade espacial. */
 @keyframes ds-painel-entra {
   from {
     opacity: 0;
-    translate: var(--ds-painel-de, 0 -8px);
+    translate: var(--ds-painel-de, 0 -4px);
+    scale: 0.97;
   }
   to {
     opacity: 1;
     translate: 0 0;
+    scale: 1;
   }
 }
 @keyframes ds-painel-sai {
   from {
     opacity: 1;
-    translate: 0 0;
+    scale: 1;
   }
   to {
     opacity: 0;
-    translate: var(--ds-painel-de, 0 -8px);
+    scale: 0.99;
   }
 }
 
@@ -1368,23 +1393,23 @@
    "continuidade espacial" que abre a lei — a interface se desloca da posição
    anterior para a atual, em vez de aparecer. */
 .ds-painel[data-side="top"] {
-  --ds-painel-de: 0 8px;
+  --ds-painel-de: 0 4px;
 }
 .ds-painel[data-side="bottom"] {
-  --ds-painel-de: 0 -8px;
+  --ds-painel-de: 0 -4px;
 }
 .ds-painel[data-side="left"] {
-  --ds-painel-de: 8px 0;
+  --ds-painel-de: 4px 0;
 }
 .ds-painel[data-side="right"] {
-  --ds-painel-de: -8px 0;
+  --ds-painel-de: -4px 0;
 }
 
 .ds-painel[data-state="open"] {
-  animation: ds-painel-entra var(--duration-base) var(--ease-out) both;
+  animation: ds-painel-entra var(--t-open) var(--t-ease) both;
 }
 .ds-painel[data-state="closed"] {
-  animation: ds-painel-sai var(--duration-fast) var(--ease-out) both;
+  animation: ds-painel-sai var(--t-close) var(--t-ease) both;
 }
 
 /* ---- Peça que surge da borda (painéis de chamada) ----------------------
@@ -1408,7 +1433,7 @@
 }
 
 .ds-surge {
-  animation: ds-surge var(--duration-slow) var(--ease-out-slow) both;
+  animation: ds-surge var(--t-panel-open) var(--t-ease) both;
 }
 .ds-surge[data-de="cima"] {
   --ds-surge-de: 0 -16px;
@@ -1602,4 +1627,274 @@
 
 @media (prefers-reduced-motion: reduce) {
   .cc-ondas-ativa .cc-onda { animation: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TRANSIÇÕES DO TRANSITIONS.DEV — as receitas aplicadas aos primitivos
+   ═══════════════════════════════════════════════════════════════════════════
+   Fonte: https://transitions.dev (skill `transitions-dev`, licença de uso livre
+   em produto próprio). Cada bloco diz de qual receita veio. Todos respeitam o
+   bloco global de movimento reduzido acima e repetem a guarda local. */
+
+/* ---- Dica (Tooltip open/close) -----------------------------------------
+   Entra em 150ms de 0.98 com ease-out; sai em 50ms — dispensar tem de ser
+   imediato. A espera de intenção já é o `delayDuration` do Radix. */
+@keyframes ds-dica-entra {
+  from {
+    opacity: 0;
+    scale: 0.98;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+@keyframes ds-dica-sai {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+.ds-dica[data-state="delayed-open"],
+.ds-dica[data-state="instant-open"] {
+  animation: ds-dica-entra 150ms ease-out both;
+}
+.ds-dica[data-state="closed"] {
+  animation: ds-dica-sai 50ms ease-out both;
+}
+
+/* ---- Abas deslizantes (Tabs sliding) -----------------------------------
+   A pílula é UM elemento que anda entre as abas (translate + width, 250ms),
+   em vez de cada aba acender e apagar o próprio fundo. Quem mede e escreve a
+   posição é o `TabsList` (components/ui/tabs.tsx); enquanto ele não mediu
+   (`data-pilula` ausente), a aba ativa mantém o fundo antigo — sem buraco no
+   primeiro quadro. */
+.ds-abas {
+  position: relative;
+  isolation: isolate;
+}
+.ds-abas-pilula {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg);
+  box-shadow: var(--shadow-sm);
+  translate: var(--pilula-x, 0) var(--pilula-y, 0);
+  width: var(--pilula-w, 0);
+  height: var(--pilula-h, 0);
+  opacity: 0;
+  transition:
+    translate var(--t-open) var(--t-ease),
+    width var(--t-open) var(--t-ease),
+    height var(--t-open) var(--t-ease),
+    opacity var(--t-close) var(--t-ease);
+}
+[data-theme="dark"] .ds-abas-pilula {
+  background-color: var(--color-surface-elevated);
+}
+.ds-abas[data-pilula="sem-transicao"] > .ds-abas-pilula {
+  transition: none;
+}
+.ds-abas[data-pilula] > .ds-abas-pilula {
+  opacity: 1;
+}
+.ds-abas[data-pilula] [role="tab"][data-state="active"] {
+  background-color: transparent;
+  box-shadow: none;
+}
+.ds-abas [role="tab"] {
+  transition: color var(--t-open) var(--t-ease);
+}
+
+/* ---- Conteúdo da aba (Panel reveal, versão curta) ----------------------
+   O Radix desmonta a aba inativa, então a entrada roda a cada troca. Cross-blur
+   de 2px + 4px de subida em 250ms: o olho percebe que o conteúdo TROCOU, sem
+   coreografia. */
+@keyframes ds-aba-entra {
+  from {
+    opacity: 0;
+    translate: 0 4px;
+    filter: blur(2px);
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+    filter: blur(0);
+  }
+}
+.ds-aba-conteudo[data-state="active"] {
+  animation: ds-aba-entra var(--t-open) var(--t-ease) backwards;
+}
+
+/* ---- Interruptor (Toggle) ----------------------------------------------
+   O polegar anda com a mola do transitions.dev (0.34, 1.35, 0.64, 1) em 350ms:
+   passa um pouco do fim e assenta. Transição, não animação, para não rodar no
+   carregamento da página. A cor do trilho cruza no próprio relógio. */
+.ds-interruptor {
+  transition: background-color var(--t-open) var(--t-ease);
+}
+.ds-interruptor > span {
+  transition: translate 350ms var(--t-ease-toggle), transform 350ms var(--t-ease-toggle);
+}
+
+/* ---- Botão: resposta ao toque ------------------------------------------
+   Afunda para 0.97 no clique e volta com a curva de superfície. */
+.ds-botao {
+  transition-property: background-color, border-color, color, box-shadow, scale;
+  transition-duration: var(--t-close);
+  transition-timing-function: var(--t-ease);
+}
+.ds-botao:active:not(:disabled) {
+  scale: 0.97;
+}
+
+/* ---- Campo inválido (Error state shake) --------------------------------
+   Quando um campo vira `aria-invalid="true"` ele treme uma vez: quatro pernas
+   (80/60/80/60ms), cada uma com a própria curva. A animação começa quando a
+   regra passa a valer, então a tremida acompanha cada nova reprovação. */
+@keyframes ds-tremida {
+  0% {
+    translate: 0 0;
+    animation-timing-function: var(--t-ease);
+  }
+  28.57% {
+    translate: 6px 0;
+    animation-timing-function: var(--t-ease);
+  }
+  57.14% {
+    translate: -6px 0;
+    animation-timing-function: var(--t-ease);
+  }
+  78.57% {
+    translate: 4px 0;
+    animation-timing-function: var(--t-ease);
+  }
+  100% {
+    translate: 0 0;
+  }
+}
+input[aria-invalid="true"],
+textarea[aria-invalid="true"],
+select[aria-invalid="true"],
+button[role="combobox"][aria-invalid="true"] {
+  animation: ds-tremida 280ms linear;
+}
+
+/* ---- Aviso (Toast open/close) ------------------------------------------
+   O sonner já move o aviso; aqui só a curva e os tempos do transitions.dev
+   (entra 350ms, sai 250ms) e o cross-blur de 2px na entrada. */
+[data-sonner-toast] {
+  transition:
+    transform 350ms var(--t-ease),
+    opacity 350ms var(--t-ease),
+    height 350ms var(--t-ease),
+    box-shadow 200ms ease,
+    filter 350ms var(--t-ease) !important;
+}
+[data-sonner-toast][data-mounted="false"] {
+  filter: blur(2px);
+}
+[data-sonner-toast][data-removed="true"] {
+  transition-duration: 250ms !important;
+}
+
+/* ---- Entrada em cascata (Texts reveal) ---------------------------------
+   O ÚNICO momento orquestrado do produto: a Visão geral montando. Cada peça
+   sobe 12px, perde 3px de blur e aparece em 500ms; a cascata é de 40ms por
+   item (`--i`), com teto de 8 itens para o último não chegar atrasado. */
+@keyframes ds-cascata {
+  from {
+    opacity: 0;
+    translate: 0 12px;
+    filter: blur(3px);
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+    filter: blur(0);
+  }
+}
+.ds-cascata {
+  animation: ds-cascata var(--t-reveal) var(--t-ease) backwards;
+  animation-delay: calc(var(--t-stagger) * min(var(--i, 0), 8));
+}
+
+/* ---- Número que muda (Number subtle change) ----------------------------
+   Só os dígitos que mudaram trocam: o antigo sai, o novo entra, subindo quando
+   o valor sobe e descendo quando cai. Distância e blur em `em`, para seguir o
+   tamanho do número. Componente: components/ui/numero-animado.tsx. */
+.ds-numero {
+  display: inline-flex;
+  align-items: baseline;
+  font-variant-numeric: tabular-nums;
+  white-space: pre;
+}
+.ds-numero-casa {
+  position: relative;
+  display: inline-block;
+}
+.ds-numero-novo {
+  display: inline-block;
+}
+.ds-numero-velho {
+  position: absolute;
+  inset: 0;
+  text-align: center;
+  pointer-events: none;
+}
+.ds-numero.anima .ds-numero-novo {
+  animation: ds-numero-entra 455ms var(--t-ease) both;
+}
+.ds-numero.anima .ds-numero-velho {
+  animation: ds-numero-sai 455ms var(--t-ease) both;
+}
+@keyframes ds-numero-entra {
+  from {
+    transform: translateY(calc(0.14em * var(--dir, 1)));
+    opacity: 0;
+    filter: blur(0.042em);
+  }
+}
+@keyframes ds-numero-sai {
+  to {
+    transform: translateY(calc(0.14em * var(--dir, 1) * -1));
+    opacity: 0;
+    filter: blur(0.042em);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-abas-pilula,
+  .ds-interruptor,
+  .ds-interruptor > span,
+  .ds-botao {
+    transition: none !important;
+  }
+  .ds-botao:active:not(:disabled) {
+    scale: 1;
+  }
+  .ds-aba-conteudo[data-state="active"],
+  .ds-cascata,
+  .ds-dica[data-state="delayed-open"],
+  .ds-dica[data-state="instant-open"],
+  input[aria-invalid="true"],
+  textarea[aria-invalid="true"],
+  select[aria-invalid="true"],
+  button[role="combobox"][aria-invalid="true"] {
+    animation: none !important;
+  }
+  .ds-numero .ds-numero-novo {
+    animation: none !important;
+  }
+  .ds-numero .ds-numero-velho {
+    display: none;
+  }
+  .ds-dica[data-state="closed"] {
+    animation: none !important;
+  }
 }
