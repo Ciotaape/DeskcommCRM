@@ -54,7 +54,7 @@ interface NegocioResumo {
 }
 
 /** Avisa a lateral do CRM (e quem mais ouvir) que o negócio desta pessoa mudou. */
-export const EVENTO_NEGOCIO_MUDOU = "deskcomm:negocio-mudou";
+export const EVENTO_NEGOCIO_MUDOU = "crm:negocio-mudou";
 
 const ROTULO: Record<string, string> = { open: "Aberto", won: "Ganho", lost: "Perdido" };
 

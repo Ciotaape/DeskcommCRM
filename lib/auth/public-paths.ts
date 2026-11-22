@@ -38,6 +38,11 @@ export const PUBLIC_PATHS: RegExp[] = [
   // acima — vem de outro site, o cookie Strict não viaja, e a rota é só a ponte
   // para um destino FIXO (`app/cobranca/volta/route.ts`), sem efeito.
   /^\/cobranca\/volta$/,
+  // Mídias fixas dos fluxos (o vídeo do Jubão no questionário da abordagem):
+  // o WhatsApp baixa o arquivo pela URL na hora do envio, sem sessão. Só
+  // `.mp4` diretamente em `/midias/`, com nome em minúsculas — nenhum outro
+  // caminho nasce público de carona.
+  /^\/midias\/[a-z0-9-]+\.mp4$/,
   /^\/403$/,
   /^\/admin\/forbidden$/,
   /^\/404$/,
