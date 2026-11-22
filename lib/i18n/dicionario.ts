@@ -21769,6 +21769,16 @@ export const DICIONARIO: Traducoes = {
   "Registrar venda": { es: "Registrar venta" },
   "O negócio vai para Fechou, a venda entra na receita e a etiqueta nos grupos vira Comprou.": { es: "El negocio pasa a Cerrado, la venta entra en los ingresos y la etiqueta en los grupos pasa a Compró." },
   "Valor da venda (R$)": { es: "Valor de la venta (R$)" },
+  "um a cada": { es: "uno cada" },
+  "Escolha…": { es: "Elige…" },
+  "Conta junto com as abordagens que você faz à mão. Mais de 40 por dia aumenta o risco de bloqueio do número.": { es: "Cuenta junto con los abordajes que haces a mano. Más de 40 por día aumenta el riesgo de bloqueo del número." },
+  "Abordagem automática salva.": { es: "Abordaje automático guardado." },
+  "Por dia": { es: "Por día" },
+  "Ver o fluxo do questionário": { es: "Ver el flujo del cuestionario" },
+  "Abordagem automática": { es: "Abordaje automático" },
+  "Mensagem de abertura": { es: "Mensaje de apertura" },
+  "O CRM chama sozinho, um por vez e com intervalos variados, quem está nos grupos, não comprou e ainda não foi abordado. Quem mais fala nos grupos vai primeiro. Depois da abertura, o fluxo do questionário faz as perguntas e manda o link.": { es: "El CRM contacta solo, uno a la vez y con intervalos variados, a quien está en los grupos, no compró y aún no fue abordado. Quien más habla en los grupos va primero. Después de la apertura, el flujo del cuestionario hace las preguntas y envía el enlace." },
+  "Fluxo do questionário": { es: "Flujo del cuestionario" },
 };
 
 /**

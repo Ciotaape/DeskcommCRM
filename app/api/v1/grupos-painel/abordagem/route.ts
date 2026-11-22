@@ -11,6 +11,7 @@ import { audit } from "@/lib/audit";
 import { createClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth/require-role";
 import { abordar, pessoasParaAbordar } from "@/lib/grupos-painel/abordagem";
+import { iniciarQuestionario, lerConfig } from "@/lib/grupos-painel/abordagem-automatica";
 import { requireSupportWrite } from "@/lib/impersonate/support";
 import { assumirConversaComEfeitos } from "@/lib/inbox/assumir-conversa";
 import { logger } from "@/lib/logger";
@@ -57,6 +58,19 @@ export async function POST(req: NextRequest): Promise<Response> {
       nome: corpo.data.nome ?? null,
       templateId: corpo.data.template_id ?? null,
     });
+    // Abordou à mão com a ABERTURA do questionário: o questionário segue
+    // sozinho, igual ao do robô.
+    let questionario = false;
+    const cfg = await lerConfig(createAdminClient(), authz.org.orgId);
+    if (cfg.fluxo_id && cfg.template_id && cfg.template_id === (corpo.data.template_id ?? null)) {
+      questionario = await iniciarQuestionario(createAdminClient(), authz.org.orgId, {
+        contactId: r.contact_id,
+        conversationId: r.conversation_id,
+        nome: corpo.data.nome ?? null,
+        fluxoId: cfg.fluxo_id,
+        requestId,
+      });
+    }
     // A conversa aberta pelo clique é de quem clicou (se estiver livre).
     try {
       await assumirConversaComEfeitos(await createClient(), {
@@ -75,9 +89,9 @@ export async function POST(req: NextRequest): Promise<Response> {
       resourceType: "conversations",
       resourceId: r.conversation_id,
       requestId,
-      metadata: { mensagens: r.enviadas },
+      metadata: { mensagens: r.enviadas, questionario },
     });
-    return ok(r, { requestId });
+    return ok({ ...r, questionario }, { requestId });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     if (msg === "ja_abordado") {

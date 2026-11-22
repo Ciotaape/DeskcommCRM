@@ -10,6 +10,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import { AbordagemAutomatica } from "./AbordagemAutomatica";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -107,6 +108,7 @@ export function AbordagemDosGrupos() {
 
   return (
     <div className="space-y-4">
+      <AbordagemAutomatica />
       <section className="space-y-3 rounded-lg border border-border bg-card p-4">
         <div>
           <h2 className="text-base font-semibold">{t("Abordagem no privado")}</h2>

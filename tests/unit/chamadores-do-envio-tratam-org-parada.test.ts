@@ -44,6 +44,10 @@ const CHAMADORES: Record<string, string> = {
   "lib/atendimento/satisfacao.ts": TRATA, // tests/unit/pesquisa-de-satisfacao-no-encerramento.test.ts (OrgNaoOperanteError => pedida:false, pedido fechado sem nota, encerramento intacto)
   "lib/inbox/encaminhar-mensagem.ts":
     "propaga o 403 org_suspended ao chamador da rota `forward`; nada é gravado — a linha do destino só nasce se o envio aceitar",
+  "lib/grupos-painel/abordagem.ts":
+    "propaga ao chamador: a rota devolve o erro a quem clicou e o robô (cron) pula a org parada antes de chamar; a abordagem só é gravada depois do envio aceito",
+  "lib/grupos-painel/programadas.ts":
+    "o cron das programadas pula a org parada antes de enviar; se a suspensão chegar no meio, a falha conta no resultado da rodada, sem retentativa",
   "lib/ouvidoria/whatsapp.ts":
     "envio best-effort do fluxo: o 403 org_suspended (e qualquer falha de envio) vira log e o fluxo segue — sem fila, sem retentativa e sem desfecho gravado; a manifestação só nasce na confirmação",
 };

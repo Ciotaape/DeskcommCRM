@@ -80,6 +80,7 @@ CRONS="
 * * * * *|50|api/v1/cron/mensagens-agendadas
 # Mensagens programadas da aba Grupos (uma vez ou todo dia, com variação).
 * * * * *|300|api/v1/cron/grupos-programadas
+* * * * *|120|api/v1/cron/grupos-abordagem-automatica
 */5 * * * *|60|api/v1/cron/webhook-log-retention
 # OAuth por contato dos servidores MCP do agente (migration 9095): revoga no
 # terceiro o acesso cuja conversa encerrou (ou cujo contato foi anonimizado).

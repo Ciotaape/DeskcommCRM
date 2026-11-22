@@ -37,6 +37,8 @@ export const AUDIT_ACTIONS = [
   "grupos_painel.venda_recebida",
   "grupos_painel.cliente_marcado",
   "grupos_painel.abordagem_enviada",
+  "grupos_painel.abordagem_automatica",
+  "grupos_painel.abordagem_automatica_configurada",
   "grupos_painel.programada_criada",
   "grupos_painel.programada_alterada",
   "grupos_painel.programada_enviada",
