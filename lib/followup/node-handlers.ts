@@ -415,11 +415,32 @@ export function resolveWaitPhase(events: EnrollmentEventRef[], nodeId: string, s
  * segundos antes do wake. `wait_started.payload.next_eval_at` é park+graça,
  * então park = next_eval_at − grace_timeout_ms.
  */
+/**
+ * A espera responde a uma mensagem que o FLUXO não mandou? Acontece quando a
+ * pergunta sai antes da inscrição — a abertura da abordagem dos grupos sai pelo
+ * envio comum e o questionário é inscrito logo depois. Quem responde rápido
+ * (segundos) responde antes de o motor estacionar na espera, e o piso "início da
+ * espera" escondia essa resposta: o "pode" era ignorado e só o segundo "sim"
+ * contava. Sem nenhum envio do próprio fluxo antes, a espera olha a resposta já
+ * na chegada e o piso recua para o início da inscrição.
+ */
+export function esperaSemEnvioDoFluxo(events: EnrollmentEventRef[]): boolean {
+  return !events.some((e) => e.event_type === "action_sent" || e.event_type === "turn_enqueued");
+}
+
+/** Folga antes do início da inscrição: a abertura sai segundos antes de inscrever. */
+const FOLGA_DA_ABERTURA_MS = 120_000;
+
 export function pisoDoInboundDaEspera(
   node: Extract<FlowNode, { type: "match_reply" }>,
   events: EnrollmentEventRef[],
   fallback: string,
+  inicioDaInscricao?: string,
 ): string {
+  if (inicioDaInscricao && esperaSemEnvioDoFluxo(events)) {
+    const t = Date.parse(inicioDaInscricao);
+    if (Number.isFinite(t)) return new Date(t - FOLGA_DA_ABERTURA_MS).toISOString();
+  }
   for (let i = events.length - 1; i >= 0; i--) {
     const e = events[i]!;
     if (e.node_id !== node.id) continue;

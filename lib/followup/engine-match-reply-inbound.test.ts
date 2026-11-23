@@ -106,7 +106,10 @@ describe("match_reply — resposta do lead após wait_started na mesma chave", (
     const deps: TickDeps = { db, clock: () => NOW, enqueueJob: async () => {} };
     await avancarEnrollmentAtivo(deps, enrollment());
 
-    expect(inboundPorPiso[0]).toBe(PARK);
+    // Sem envio do próprio fluxo antes da espera, o piso recua para o início da
+    // inscrição (menos a folga da abertura): a resposta rápida a uma pergunta
+    // mandada fora do fluxo não pode ser escondida (esperaSemEnvioDoFluxo).
+    expect(inboundPorPiso[0]).toBe(new Date(Date.parse(PARK) - 120_000).toISOString());
     expect(passos.some((p) => p.current_node_id === "action-7")).toBe(true);
     expect(passos.some((p) => p.current_node_id === "action-6")).toBe(false);
   });
