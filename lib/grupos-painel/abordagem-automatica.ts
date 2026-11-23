@@ -20,6 +20,7 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { autorizarContatoParaIA } from "@/lib/ai/elegibilidade/autorizacao";
 import { enrollFollowupFlow } from "@/lib/followup/enroll";
 import { garantirLeadDaConversa } from "@/lib/leads/nascimento-do-lead";
 import { logger } from "@/lib/logger";
@@ -154,6 +155,25 @@ export async function iniciarQuestionario(
   } catch (err) {
     logger.warn("abordagem-automatica: card não criado", { requestId: e.requestId, causa: String(err) });
   }
+  // O número fica em "só autorizados" (o padrão): sem a autorização positiva,
+  // o gate de elegibilidade barra em silêncio cada pergunta do questionário
+  // (`sem_autorizacao`) e a pessoa só recebe a abertura. A abordagem É a
+  // origem deste lead, como uma campanha — mesma régua, motivo próprio.
+  await autorizarContatoParaIA(admin, {
+    organizationId: org,
+    contactId: e.contactId,
+    reason: "automacao:abordagem_grupos",
+  });
+  // A abertura saiu em nome de uma pessoa, e envio de pessoa CALA o automático
+  // da conversa por uma janela (`extendBotSilence` no handler de mensagens) —
+  // o questionário pararia na primeira pergunta. Quem iniciou o questionário
+  // decidiu que esta conversa é dele: o silêncio da abertura é desfeito.
+  await admin
+    .from("conversations")
+    .update({ bot_silenced_until: null })
+    .eq("organization_id", org)
+    .eq("id", e.conversationId)
+    .is("assigned_to_user_id", null);
   const r = await enrollFollowupFlow(admin, {
     organizationId: org,
     pointerId: e.fluxoId,

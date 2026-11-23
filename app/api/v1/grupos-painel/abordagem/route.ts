@@ -71,8 +71,11 @@ export async function POST(req: NextRequest): Promise<Response> {
         requestId,
       });
     }
-    // A conversa aberta pelo clique é de quem clicou (se estiver livre).
-    try {
+    // A conversa aberta pelo clique é de quem clicou (se estiver livre) —
+    // MENOS quando o questionário vai rodar: assumir silencia o automático da
+    // conversa, e o questionário pararia na primeira pergunta. Quem responder
+    // o questionário recebe a tarefa no fim e assume dali.
+    if (!questionario) try {
       await assumirConversaComEfeitos(await createClient(), {
         organizationId: authz.org.orgId,
         conversationId: r.conversation_id,
