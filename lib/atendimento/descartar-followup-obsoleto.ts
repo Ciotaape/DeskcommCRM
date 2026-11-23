@@ -26,10 +26,37 @@ export async function descartarFollowupObsoleto(
       [job.organization_id, job.id, workerId, claim.acquired_at],
     );
     if (rows.length) {
-      await tx.query(
-        `select fn_followup_turno_descartado($1,$2) where public.fn_autonomous_turn_revoked($1,$2)`,
+      const { rows: revogado } = await tx.query<{ r: boolean }>(
+        `select public.fn_autonomous_turn_revoked($1,$2) as r`,
         [job.organization_id, job.id],
       );
+      if (revogado[0]?.r === true) {
+        await tx.query(`select fn_followup_turno_descartado($1,$2)`, [job.organization_id, job.id]);
+      } else {
+        // O cliente escreveu de novo entre o enfileiramento e o envio (atendimento
+        // novo). O passo NÃO saiu: grava o descarte para o motor enfileirar o
+        // mesmo passo de novo com a fronteira atual. Sem isto a inscrição ficava
+        // em recheck até morrer (`action_turn_never_completed`) e o lead parava
+        // no meio do questionário.
+        await tx.query(
+          `insert into public.followup_enrollment_events
+             (organization_id, enrollment_id, node_id, event_type, payload, idempotency_key)
+           select $1, e.id, e.current_node_id, 'turn_discarded',
+                  jsonb_build_object('job_id', j.id, 'motivo', 'service_boundary_stale'),
+                  coalesce(j.payload->>'source_step_key', j.id::text) || ':descartado'
+             from public.job_queue j
+             join public.followup_enrollments e
+               on e.organization_id = $1
+              and e.id::text = j.payload->>'followup_enrollment_id'
+              and e.current_node_id = j.payload->>'node_id'
+              and e.status in ('active', 'waiting_reply')
+            where j.id = $2 and j.organization_id = $1
+              and j.kind = 'followup_turn'
+              and j.payload->>'purpose' = 'send_message'
+           on conflict (enrollment_id, idempotency_key) where idempotency_key is not null do nothing`,
+          [job.organization_id, job.id],
+        );
+      }
       await cancelJob(tx, job.id, workerId, "service_boundary_stale", claim.acquired_at);
     } else {
       // Não registra descarte nem altera o lease que já pertence a outro ciclo.
