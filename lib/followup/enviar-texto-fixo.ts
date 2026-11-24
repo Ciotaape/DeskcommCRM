@@ -115,6 +115,7 @@ export async function enviarTextoFixoPendente(
     if (claimErr) throw new Error(claimErr.message);
     if (!claimed) continue;
     const jobClaim={worker_id:claimed.locked_by as string,acquired_at:claimed.locked_at as string};
+    let mensagemSaiu = false;
 
     try {
       const { data: enr } = await admin
@@ -385,6 +386,7 @@ export async function enviarTextoFixoPendente(
           : {conversation_id:conversationId,type:"text",body,metadata:{idempotency_key:key}}) as Parameters<typeof sendMessageHandler>[2],
       ));
       if(resultado.kind!=="sent" && resultado.kind!=="already_sent") throw new Error(`message_${resultado.kind}`);
+      mensagemSaiu = true;
       // CONTABILIZA. Sem esta linha o envio não entrava no `pacing_ledger` e o
       // agente seguia achando o número folgado — o teto protegia metade dele.
       // Falha de gravação é ABERTA por construção: `registrarEnvioNoLedger`
@@ -419,6 +421,16 @@ export async function enviarTextoFixoPendente(
         const { error: falhaDoDescarte } = await admin.rpc("fn_followup_turno_descartado", { p_org: job.organization_id, p_job: job.id });
         if (falhaDoDescarte) throw falhaDoDescarte;
       }
+      if (err instanceof StaleServiceBoundaryError && !revogado) {
+        await registrarDesfechoDoTextoObsoleto(admin, {
+          organizationId: job.organization_id as string,
+          jobId: job.id as string,
+          enrollmentId,
+          nodeId,
+          sourceStepKey: typeof payload.source_step_key === "string" ? payload.source_step_key : null,
+          mensagemSaiu,
+        });
+      }
       await settle(job.organization_id,job.id,jobClaim.acquired_at,err instanceof StaleServiceBoundaryError||err instanceof OrgNaoOperanteError,message,
         err instanceof AgendaDeferredError
           ? { retryAt: err.protection.reavaliar_em ?? null, hold: err.protection.motivo !== "leitura_indisponivel" }
@@ -426,4 +438,63 @@ export async function enviarTextoFixoPendente(
     }
   }
   return enviados;
+}
+
+/**
+ * O passo de texto fixo caiu na fronteira de atendimento (o cliente escreveu de
+ * novo antes de o passo fechar). Sem rastro, a inscrição ficava em recheck até
+ * morrer com `action_turn_never_completed` — e no caso comum a mensagem JÁ tinha
+ * saído. Mesma regra de `registrarDesfechoDoPassoObsoleto` (caminho do worker):
+ * saiu → `action_sent` (o motor avança, nada é reenviado); nenhuma linha no
+ * `send_ledger` → `turn_discarded` (o motor enfileira de novo); qualquer outro
+ * estado do ledger → nada, como antes (envio em dobro é pior que não-envio).
+ */
+async function registrarDesfechoDoTextoObsoleto(
+  admin: SupabaseClient,
+  a: {
+    organizationId: string;
+    jobId: string;
+    enrollmentId: string;
+    nodeId: string;
+    sourceStepKey: string | null;
+    mensagemSaiu: boolean;
+  },
+): Promise<void> {
+  let evento: "action_sent" | "turn_discarded" | null = a.mensagemSaiu ? "action_sent" : null;
+  if (evento === null) {
+    const { data, error } = await admin
+      .from("send_ledger")
+      .select("status")
+      .eq("organization_id", a.organizationId)
+      .eq("job_id", a.jobId)
+      .order("seq", { ascending: false })
+      .limit(1);
+    if (error) throw new Error(error.message);
+    const estado = (data?.[0] as { status?: string } | undefined)?.status ?? null;
+    evento = estado === "accepted" || estado === "queued" ? "action_sent" : estado === null ? "turn_discarded" : null;
+  }
+  if (evento === null) return;
+  const { data: enr, error: leitura } = await admin
+    .from("followup_enrollments")
+    .select("current_node_id,status")
+    .eq("id", a.enrollmentId)
+    .eq("organization_id", a.organizationId)
+    .maybeSingle();
+  if (leitura) throw new Error(leitura.message);
+  if (!enr || enr.current_node_id !== a.nodeId || !["active", "waiting_reply"].includes(enr.status as string)) return;
+  const { error: gravacao } = await admin.from("followup_enrollment_events").insert({
+    organization_id: a.organizationId,
+    enrollment_id: a.enrollmentId,
+    node_id: a.nodeId,
+    event_type: evento,
+    payload: { job_id: a.jobId, motivo: "service_boundary_stale" },
+    idempotency_key: `${a.sourceStepKey ?? a.jobId}:${evento}`,
+  });
+  // 23505 = já gravado por outra passada: o desfecho é o mesmo.
+  if (gravacao && gravacao.code !== "23505") throw new Error(gravacao.message);
+  await admin
+    .from("followup_enrollments")
+    .update({ next_eval_at: new Date().toISOString() })
+    .eq("id", a.enrollmentId)
+    .eq("organization_id", a.organizationId);
 }
