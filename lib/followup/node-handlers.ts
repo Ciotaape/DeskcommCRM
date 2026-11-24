@@ -452,7 +452,29 @@ export function pisoDoInboundDaEspera(
     const envio = envioTardioQueAbriuAEspera(events, i);
     return new Date(envio !== null && envio < start ? envio : start).toISOString();
   }
+  // Ainda sem `wait_started` neste nó: é a ENTRADA na espera. Se a pergunta foi
+  // registrada tarde, o piso é o instante em que ela saiu (ver abaixo).
+  const tardio = envioTardioQueAbriuAEspera(events, events.length);
+  if (tardio !== null) return new Date(tardio).toISOString();
   return fallback;
+}
+
+/**
+ * A espera está sendo ABERTA por um envio registrado tarde (`action_sent` com
+ * `enviado_em`) e ainda não estacionou (`wait_started`). Na entrada comum o
+ * motor não lê a conversa — só estaciona e espera o cliente responder. Aqui a
+ * resposta pode JÁ existir: o cliente respondeu enquanto o passo estava preso.
+ * Sem ler na entrada, o fluxo destravava e ficava esperando uma resposta que já
+ * tinha chegado.
+ */
+export function esperaAbertaPorEnvioTardio(events: EnrollmentEventRef[], nodeId: string): boolean {
+  for (let i = events.length - 1; i >= 0; i--) {
+    const e = events[i]!;
+    if (e.event_type === "wait_started") return false;
+    if (e.node_id === nodeId && e.event_type !== "node_advanced") return false;
+    if (e.event_type === "action_sent") return typeof e.payload?.enviado_em === "string";
+  }
+  return false;
 }
 
 /**

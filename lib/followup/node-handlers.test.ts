@@ -5,6 +5,7 @@ import {
   actionTurnCompleted,
   occupancyEventCount,
   pisoDoInboundDaEspera,
+  esperaAbertaPorEnvioTardio,
   processNode,
   rechecksOciososDaAcao,
   resolveWaitPhase,
@@ -188,6 +189,18 @@ describe("pisoDoInboundDaEspera", () => {
     expect(pisoDoInboundDaEspera(no, [comum, wait], "2026-09-20T19:18:00.000Z")).toBe(park);
   });
 
+  it("na ENTRADA da espera (sem wait_started), o envio tardio já vale como piso", () => {
+    const saiu = "2026-09-20T16:55:00.000Z";
+    const tardio = {
+      node_id: "p1",
+      idempotency_key: "p1:2:vigia:action_sent",
+      event_type: "action_sent",
+      payload: { enviado_em: saiu },
+    };
+    const avancou = { node_id: "p1", idempotency_key: "p1:3", event_type: "node_advanced", payload: {} };
+    expect(pisoDoInboundDaEspera(no, [tardio, avancou], "2026-09-20T19:18:00.000Z")).toBe(saiu);
+  });
+
   it("só o envio desta espera conta, não o de uma pergunta anterior", () => {
     const antigo = {
       node_id: "p0",
@@ -198,6 +211,35 @@ describe("pisoDoInboundDaEspera", () => {
     const esperaAnterior = { ...wait, node_id: "mr0", idempotency_key: "mr0:2" };
     const comum = { node_id: "p1", idempotency_key: "p1:3", event_type: "action_sent", payload: {} };
     expect(pisoDoInboundDaEspera(no, [antigo, esperaAnterior, comum, wait], "2026-09-20T19:18:00.000Z")).toBe(park);
+  });
+});
+
+describe("esperaAbertaPorEnvioTardio", () => {
+  const tardio = {
+    node_id: "p3",
+    idempotency_key: "p3:7:vigia:action_sent",
+    event_type: "action_sent",
+    payload: { enviado_em: "2026-11-24T00:23:59.000Z" },
+  };
+  const avancou = { node_id: "p3", idempotency_key: "p3:8", event_type: "node_advanced", payload: {} };
+
+  it("entrando na espera depois de um envio registrado tarde: lê a conversa", () => {
+    expect(esperaAbertaPorEnvioTardio([tardio, avancou], "r3")).toBe(true);
+  });
+
+  it("envio comum: entrada de sempre, sem ler a conversa", () => {
+    const comum = { ...tardio, idempotency_key: "p3:7", payload: {} };
+    expect(esperaAbertaPorEnvioTardio([comum, avancou], "r3")).toBe(false);
+  });
+
+  it("espera já estacionada: quem decide é a regra de sempre", () => {
+    const parou = {
+      node_id: "r3",
+      idempotency_key: "r3:9",
+      event_type: "wait_started",
+      payload: { next_eval_at: "2026-11-25T01:17:03.511Z" },
+    };
+    expect(esperaAbertaPorEnvioTardio([tardio, avancou, parou], "r3")).toBe(false);
   });
 });
 

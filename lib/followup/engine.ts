@@ -34,6 +34,7 @@ import {
   latestRepeatIndex,
   occupancyEventCount,
   pisoDoInboundDaEspera,
+  esperaAbertaPorEnvioTardio,
   esperaSemEnvioDoFluxo,
   rechecksOciososDaAcao,
   turnoDaAcaoDescartado,
@@ -1206,7 +1207,12 @@ async function processEnrollment(
   if (textoInbound && node.type === "match_reply") {
     lastInboundBody = textoInbound;
   } else if (
-    (node.type === "match_reply" && (wokeEarly || waitElapsed || matchReplyOcupado || esperaSemEnvioDoFluxo(events))) ||
+    (node.type === "match_reply" &&
+      (wokeEarly ||
+        waitElapsed ||
+        matchReplyOcupado ||
+        esperaSemEnvioDoFluxo(events) ||
+        esperaAbertaPorEnvioTardio(events, node.id))) ||
     (node.type === "repeat" && repeatTotal == null)
   ) {
     // Sempre no contato inteiro: a captação e o WhatsApp podem ser conversas
