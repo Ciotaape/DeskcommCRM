@@ -88,6 +88,10 @@ vi.mock("@/lib/followup/silence-sweep", () => ({
 }));
 vi.mock("@/lib/followup/enviar-texto-fixo", () => ({ enviarTextoFixoPendente: async () => 0 }));
 vi.mock("@/lib/followup/atendimento", () => ({ encerrarRoteirosVencidos: async () => 0 }));
+// A vigia de passos presos também usa o pool `pg`; aqui só o retrato conta leituras.
+vi.mock("@/lib/followup/vigia-de-passos-presos", () => ({
+  vigiarPassosPresos: async () => ({ fechados: 0, reenfileirados: 0 }),
+}));
 
 import { GET } from "@/app/api/v1/cron/followup-flow-worker/route";
 

@@ -479,6 +479,8 @@ export const AUDIT_ACTIONS = [
   "followup.silence_sweep_run",
   // Roteiros de atendimento encerrados por prazo (0397) — só quando houve efeito.
   "followup.roteiros_expirados",
+  // Vigia de passos presos: só quando destravou alguma inscrição.
+  "followup.vigia_passos_presos",
   "followup_enrollment.created",
   "followup_enrollment.cancelled",
   // As quatro intervenções humanas num follow-up em andamento (0145). São

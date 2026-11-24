@@ -72,10 +72,11 @@ type Consultor = { query: (sql: string, params?: unknown[]) => Promise<unknown> 
 export async function registrarDesfechoDoPassoObsoleto(tx: Consultor, job: JobRow): Promise<void> {
   if (job.payload?.purpose !== "send_message") return;
   const { rows } = (await tx.query(
-    `select status from send_ledger where organization_id=$1 and job_id=$2 order by seq desc limit 1`,
+    `select status, updated_at from send_ledger where organization_id=$1 and job_id=$2 order by seq desc limit 1`,
     [job.organization_id, job.id],
-  )) as { rows: Array<{ status: string }> };
+  )) as { rows: Array<{ status: string; updated_at: Date | string | null }> };
   const estado = rows[0]?.status ?? null;
+  const enviadoEm = rows[0]?.updated_at ? new Date(rows[0].updated_at).toISOString() : null;
   const evento =
     estado === "accepted" || estado === "queued" ? "action_sent" : estado === null ? "turn_discarded" : null;
   if (evento === null) return;
@@ -84,7 +85,9 @@ export async function registrarDesfechoDoPassoObsoleto(tx: Consultor, job: JobRo
        insert into public.followup_enrollment_events
          (organization_id, enrollment_id, node_id, event_type, payload, idempotency_key)
        select $1, e.id, e.current_node_id, $3,
-              jsonb_build_object('job_id', j.id, 'motivo', 'service_boundary_stale'),
+              jsonb_build_object('job_id', j.id, 'motivo', 'service_boundary_stale')
+                || case when $3 = 'action_sent' and $4::text is not null
+                        then jsonb_build_object('enviado_em', $4::text) else '{}'::jsonb end,
               coalesce(j.payload->>'source_step_key', j.id::text) || ':' || $3
          from public.job_queue j
          join public.followup_enrollments e
@@ -98,6 +101,6 @@ export async function registrarDesfechoDoPassoObsoleto(tx: Consultor, job: JobRo
      )
      update public.followup_enrollments f set next_eval_at = now()
        from gravado g where f.id = g.enrollment_id and f.organization_id = $1`,
-    [job.organization_id, job.id, evento],
+    [job.organization_id, job.id, evento, enviadoEm],
   );
 }

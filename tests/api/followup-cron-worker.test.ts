@@ -84,6 +84,8 @@ describe("GET/POST /api/v1/cron/followup-flow-worker", () => {
     expect(body.data).toEqual({
       ...summary,
       confirmation_sweep: { ok: true, avisos: 0 },
+      // Sem pool nesta suíte, a vigia falha, loga e não derruba o tick.
+      vigia_de_passos_presos: { fechados: 0, reenfileirados: 0 },
       recursos: { followup: true, followup_silencio: true, fila_followup: true },
     });
     expect(vi.mocked(createSupabaseAdminClient)).toHaveBeenCalledWith(expect.anything());
@@ -162,6 +164,7 @@ describe("GET/POST /api/v1/cron/followup-flow-worker", () => {
       expect(body.data).toEqual({
         ...summary,
         confirmation_sweep: { ok: false, erro },
+        vigia_de_passos_presos: { fechados: 0, reenfileirados: 0 },
         recursos: { followup: true, followup_silencio: true, fila_followup: true },
       });
       expect(logErro).toHaveBeenCalledWith(

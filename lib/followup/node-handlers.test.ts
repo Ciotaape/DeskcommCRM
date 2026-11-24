@@ -171,6 +171,34 @@ describe("pisoDoInboundDaEspera", () => {
   it("sem wait_started, usa o fallback", () => {
     expect(pisoDoInboundDaEspera(no, [], "2026-09-20T19:18:00.000Z")).toBe("2026-09-20T19:18:00.000Z");
   });
+
+  it("envio registrado tarde (vigia): o piso volta ao instante em que a pergunta saiu", () => {
+    const saiu = "2026-09-20T16:55:00.000Z";
+    const tardio = {
+      node_id: "p1",
+      idempotency_key: "p1:2:vigia:action_sent",
+      event_type: "action_sent",
+      payload: { motivo: "vigia_de_passo_preso", enviado_em: saiu },
+    };
+    expect(pisoDoInboundDaEspera(no, [tardio, wait], "2026-09-20T19:18:00.000Z")).toBe(saiu);
+  });
+
+  it("action_sent comum (sem enviado_em) mantém o piso de sempre", () => {
+    const comum = { node_id: "p1", idempotency_key: "p1:3", event_type: "action_sent", payload: {} };
+    expect(pisoDoInboundDaEspera(no, [comum, wait], "2026-09-20T19:18:00.000Z")).toBe(park);
+  });
+
+  it("só o envio desta espera conta, não o de uma pergunta anterior", () => {
+    const antigo = {
+      node_id: "p0",
+      idempotency_key: "p0:1:vigia:action_sent",
+      event_type: "action_sent",
+      payload: { enviado_em: "2026-09-20T10:00:00.000Z" },
+    };
+    const esperaAnterior = { ...wait, node_id: "mr0", idempotency_key: "mr0:2" };
+    const comum = { node_id: "p1", idempotency_key: "p1:3", event_type: "action_sent", payload: {} };
+    expect(pisoDoInboundDaEspera(no, [antigo, esperaAnterior, comum, wait], "2026-09-20T19:18:00.000Z")).toBe(park);
+  });
 });
 
 describe("actionTurnCompleted", () => {

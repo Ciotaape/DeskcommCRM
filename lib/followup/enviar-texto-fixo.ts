@@ -116,6 +116,7 @@ export async function enviarTextoFixoPendente(
     if (!claimed) continue;
     const jobClaim={worker_id:claimed.locked_by as string,acquired_at:claimed.locked_at as string};
     let mensagemSaiu = false;
+    let enviadoEm: string | null = null;
 
     try {
       const { data: enr } = await admin
@@ -387,6 +388,7 @@ export async function enviarTextoFixoPendente(
       ));
       if(resultado.kind!=="sent" && resultado.kind!=="already_sent") throw new Error(`message_${resultado.kind}`);
       mensagemSaiu = true;
+      enviadoEm = new Date().toISOString();
       // CONTABILIZA. Sem esta linha o envio não entrava no `pacing_ledger` e o
       // agente seguia achando o número folgado — o teto protegia metade dele.
       // Falha de gravação é ABERTA por construção: `registrarEnvioNoLedger`
@@ -429,6 +431,7 @@ export async function enviarTextoFixoPendente(
           nodeId,
           sourceStepKey: typeof payload.source_step_key === "string" ? payload.source_step_key : null,
           mensagemSaiu,
+          enviadoEm,
         });
       }
       await settle(job.organization_id,job.id,jobClaim.acquired_at,err instanceof StaleServiceBoundaryError||err instanceof OrgNaoOperanteError,message,
@@ -458,19 +461,23 @@ async function registrarDesfechoDoTextoObsoleto(
     nodeId: string;
     sourceStepKey: string | null;
     mensagemSaiu: boolean;
+    enviadoEm: string | null;
   },
 ): Promise<void> {
   let evento: "action_sent" | "turn_discarded" | null = a.mensagemSaiu ? "action_sent" : null;
+  let enviadoEm = a.enviadoEm;
   if (evento === null) {
     const { data, error } = await admin
       .from("send_ledger")
-      .select("status")
+      .select("status, updated_at")
       .eq("organization_id", a.organizationId)
       .eq("job_id", a.jobId)
       .order("seq", { ascending: false })
       .limit(1);
     if (error) throw new Error(error.message);
-    const estado = (data?.[0] as { status?: string } | undefined)?.status ?? null;
+    const linha = data?.[0] as { status?: string; updated_at?: string | null } | undefined;
+    const estado = linha?.status ?? null;
+    if (estado === "accepted" || estado === "queued") enviadoEm = linha?.updated_at ?? null;
     evento = estado === "accepted" || estado === "queued" ? "action_sent" : estado === null ? "turn_discarded" : null;
   }
   if (evento === null) return;
@@ -487,14 +494,22 @@ async function registrarDesfechoDoTextoObsoleto(
     enrollment_id: a.enrollmentId,
     node_id: a.nodeId,
     event_type: evento,
-    payload: { job_id: a.jobId, motivo: "service_boundary_stale" },
+    payload: {
+      job_id: a.jobId,
+      motivo: "service_boundary_stale",
+      ...(evento === "action_sent" && enviadoEm ? { enviado_em: enviadoEm } : {}),
+    },
     idempotency_key: `${a.sourceStepKey ?? a.jobId}:${evento}`,
   });
   // 23505 = já gravado por outra passada: o desfecho é o mesmo.
   if (gravacao && gravacao.code !== "23505") throw new Error(gravacao.message);
+  // "Avance agora" com o relógio do BANCO (`fn_agora()`, migration 0147): o claim
+  // compara com `now()` do Postgres, e o relógio do processo pode estar à frente.
+  const { data: agora, error: falhaDoRelogio } = await admin.rpc("fn_agora" as never);
+  if (falhaDoRelogio) throw new Error(`fn_agora: ${falhaDoRelogio.message}`);
   await admin
     .from("followup_enrollments")
-    .update({ next_eval_at: new Date().toISOString() })
+    .update({ next_eval_at: agora as unknown as string })
     .eq("id", a.enrollmentId)
     .eq("organization_id", a.organizationId);
 }

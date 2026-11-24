@@ -38,6 +38,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseAdminClient, runFollowupTick, type FollowupJobRequest, type TickSummary } from "@/lib/followup/engine";
 import { createSupabaseFollowupGateDb } from "@/lib/followup/agent-followup-gate";
 import { enviarTextoFixoPendente } from "@/lib/followup/enviar-texto-fixo";
+import { vigiarPassosPresos, type ResultadoDaVigia } from "@/lib/followup/vigia-de-passos-presos";
+import { getRequestPool } from "@/lib/agent-engine/db/request-pool";
 import { encerrarRoteirosVencidos } from "@/lib/followup/atendimento";
 import { createSupabaseSilenceSweepDb, runSilenceSweep } from "@/lib/followup/silence-sweep";
 import { autorizaCron } from "@/lib/auth/cron-auth";
@@ -102,6 +104,29 @@ async function handle(req: NextRequest): Promise<Response> {
 
   // Tick que não chegou a rodar é indistinguível, na resposta, de um tick sem
   // nada vencido — a não ser pelo `recursos` no fim do corpo, que diz por quê.
+  // Vigia de passos presos: ANTES do tick, para a inscrição destravada aqui
+  // avançar nesta mesma batida (a vigia põe `next_eval_at = now()`). Falha da
+  // vigia nunca derruba o tick — ela é rede de segurança, não o motor.
+  let vigia: ResultadoDaVigia = { fechados: 0, reenfileirados: 0 };
+  if (followupLigado) {
+    try {
+      vigia = await vigiarPassosPresos(getRequestPool());
+      if (vigia.fechados || vigia.reenfileirados) {
+        logger.warn("[followup-flow-worker.cron] vigia destravou passos presos", { ...vigia, requestId });
+        void audit({
+          action: "followup.vigia_passos_presos",
+          organizationId: null,
+          bypassedRls: true,
+          metadata: { ...vigia },
+          requestId,
+        });
+      }
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      logger.error("[followup-flow-worker.cron] vigiarPassosPresos threw", { error: detail, requestId });
+    }
+  }
+
   let summary: TickSummary = { claimed: 0, advanced: 0, scheduled: 0, failed: 0, dead: 0 };
   if (followupLigado) {
     try {
@@ -235,6 +260,7 @@ async function handle(req: NextRequest): Promise<Response> {
     {
       ...summary,
       confirmation_sweep: confirmationSweep,
+      vigia_de_passos_presos: vigia,
       // Diz, sem ambiguidade, se a rodada rodou: tick de minuto com três `false`
       // aqui é "nada ligado nesta instalação", não "o motor falhou calado".
       recursos: { followup: followupLigado, followup_silencio: silencioLigado, fila_followup: filaLigada },

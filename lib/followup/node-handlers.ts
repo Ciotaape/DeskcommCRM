@@ -448,10 +448,36 @@ export function pisoDoInboundDaEspera(
     const next = e.payload?.next_eval_at;
     if (typeof next !== "string") break;
     const start = Date.parse(next) - node.config.grace_timeout_ms;
-    if (Number.isFinite(start)) return new Date(start).toISOString();
-    break;
+    if (!Number.isFinite(start)) break;
+    const envio = envioTardioQueAbriuAEspera(events, i);
+    return new Date(envio !== null && envio < start ? envio : start).toISOString();
   }
   return fallback;
+}
+
+/**
+ * O envio que abriu esta espera, quando ele foi REGISTRADO DEPOIS de sair: o
+ * `action_sent` gravado pela vigia de passos presos ou pelo desfecho do passo
+ * que caiu na fronteira de atendimento traz `payload.enviado_em` — o instante
+ * real em que a mensagem saiu. Sem isto a espera começava no registro tardio e
+ * a resposta que o cliente JÁ tinha mandado à pergunta ficava abaixo do piso:
+ * o fluxo destravava e continuava esperando uma resposta que já existia.
+ *
+ * Só o `action_sent` imediatamente anterior à espera conta (o envio desta
+ * pergunta, e não o de uma anterior); `action_sent` comum não tem o campo, e o
+ * piso fica exatamente como era.
+ */
+function envioTardioQueAbriuAEspera(events: EnrollmentEventRef[], indiceDaEspera: number): number | null {
+  for (let i = indiceDaEspera - 1; i >= 0; i--) {
+    const e = events[i]!;
+    if (e.event_type === "wait_started") return null;
+    if (e.event_type !== "action_sent") continue;
+    const enviadoEm = e.payload?.enviado_em;
+    if (typeof enviadoEm !== "string") return null;
+    const t = Date.parse(enviadoEm);
+    return Number.isFinite(t) ? t : null;
+  }
+  return null;
 }
 
 /**

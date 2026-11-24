@@ -147,6 +147,16 @@ const ESCRITORES: Record<string, { agenda: "agora" | "futuro" | "nenhum"; nota: 
     agenda: "futuro",
     nota: "retomada de pausa manual: agenda o restante do adiamento, sempre no futuro.",
   },
+  "vigia-de-passos-presos.ts": {
+    agenda: "agora",
+    nota: "acorda a inscrição destravada com `next_eval_at = now()` DENTRO do SQL — relógio do banco.",
+  },
+  "enviar-texto-fixo.ts": {
+    agenda: "agora",
+    nota:
+      "o desfecho do passo que caiu na fronteira acorda a inscrição com `fn_agora()` (relógio do " +
+      "banco, 0147) — o supabase-js grava valor, então o instante vem da RPC, não do processo.",
+  },
   "eventos-legiveis.ts": {
     agenda: "nenhum",
     nota: "traduz o campo para a timeline do dossiê; não escreve.",
